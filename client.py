@@ -1,16 +1,14 @@
 import threading, socket, os
-host_addr = "127.0.0.1"
-port =9890
+import sys
 load_bal_Addr="127.0.0.1"
 load_bal_port=9999
+isLoggedIn = False
 
 def appending_dollar(msg):
     s=""
     for i in msg.split(' '):
-        s=s+i.strip()+"$"
+        s += i.strip()+"$"
     return s
-
-
 
 def handle_request(connection):
     data = connection.recv(1024)
@@ -36,9 +34,9 @@ def handle_request(connection):
 
 
 
-def client_as_server():
+def client_as_server(host_addr, port):
     s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host_addr, port))
+    s.bind((host_addr, int(port)))
 
     thread_list=[]
     while True:
@@ -63,29 +61,51 @@ def client_connection_with_other_client(ip,port):
 
 
 def main():
+    if len(sys.argv) != 3:
+        print("Type in the format : client.py <IP> <PORT>")
+        return
     #---Listening for other clients or servers
-    client_as_server()
+    client_IP = sys.argv[1]
+    client_PORT = sys.argv[2]
+    print("Listening on ",client_IP,client_PORT)
+    
+    initial_thread = threading.Thread(target = client_as_server, args=(client_IP, client_PORT))
 
     #---Connecting to Load Balancer
     s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((load_bal_Addr,load_bal_port))
 
     #---Ek Ackn daal sakte hai from Load Balancer after connection with Load Balancer le Welcome ya kch bhe
-    while true:
-
-        og_msg=input()
-        padded_msg=appending_dollar(og_msg)+host_addr+"$"+port
-        tokens=og_msg.split(' ')
+    print("Available Commands")
+    print("Signup <Name> <Roll no.> <Password>")
+    print("Login <Name||Roll no.> <Password>")
+    print("Send <Name||Roll no.> <message>")
+    print("List")
+    print("Create <Group name>")
+    print("Join <Group name>\n")
+    while True:
+        org_msg=input(":")
+        # padded_msg=appending_dollar(org_msg)+client_IP+"$"+client_PORT
+        tokens=org_msg.split(' ')
         
-        if (tokens[0]=="Sign up"):
+        if (tokens[0].lower()=="signup"):
+            if len(tokens) != 4:
+                print("Invalid args to <Signup>")
+                continue
+            username = tokens[1]+tokens[2]
+            padded_msg = "signup$"+username+"$"+tokens[3]
             s.send(padded_msg.encode('ascii'))
-            data = s.recv(1024).decode("utf-8") 
+            data = s.recv(1024).decode("ascii") 
             if (data.split('$')[0]==1):
                 print("Sign up Successful! ")
             else:
                 print("Sign up Failed! Try Again")
         
-        elif (tokens[0]=="Login"):
+        elif (tokens[0].lower()=="login"):
+            if len(tokens) != 3:
+                print("Invalid args to <Login>")
+                continue            
+            padded_msg = "login$"+tokens[1]+"$"+tokens[2]
             s.send(padded_msg.encode('ascii'))
             data = s.recv(1024).decode("utf-8") 
             if (data.split('$')[0]==1):
@@ -93,7 +113,7 @@ def main():
             else:
                 print("Wrong Credentianals or Sign Up First")
 
-        elif (tokens[0]=="SEND"):
+        elif (tokens[0].lower()=="send"):
             s.send(padded_msg.encode('ascii'))
             data = s.recv(1024).decode("utf-8")
             if (data.split('$')[0]==1):
