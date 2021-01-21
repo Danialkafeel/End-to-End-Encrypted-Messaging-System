@@ -62,96 +62,77 @@ def client_connection_with_other_client(ip,port):
         print(data)
 
 
+def main():
+    #---Listening for other clients or servers
+    client_as_server()
 
-#---Listening for other clients or servers
-client_as_server()
+    #---Connecting to Load Balancer
+    s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((load_bal_Addr,load_bal_port))
 
-#---Connecting to Load Balancer
-s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((load_bal_Addr,load_bal_port))
+    #---Ek Ackn daal sakte hai from Load Balancer after connection with Load Balancer le Welcome ya kch bhe
+    while true:
 
-#---Ek Ackn daal sakte hai from Load Balancer after connection with Load Balancer le Welcome ya kch bhe
-while true:
+        og_msg=input()
+        padded_msg=appending_dollar(og_msg)+host_addr+"$"+port
+        tokens=og_msg.split(' ')
+        
+        if (tokens[0]=="Sign up"):
+            s.send(padded_msg.encode('ascii'))
+            data = s.recv(1024).decode("utf-8") 
+            if (data.split('$')[0]==1):
+                print("Sign up Successful! ")
+            else:
+                print("Sign up Failed! Try Again")
+        
+        elif (tokens[0]=="Login"):
+            s.send(padded_msg.encode('ascii'))
+            data = s.recv(1024).decode("utf-8") 
+            if (data.split('$')[0]==1):
+                print("Login in Successful! ")
+            else:
+                print("Wrong Credentianals or Sign Up First")
 
-    og_msg=input()
-    padded_msg=appending_dollar(og_msg)+host_addr+"$"+port
-    tokens=og_msg.split(' ')
-    
-    if (tokens[0]=="Sign up"):
-        s.send(padded_msg.encode('ascii'))
-        data = s.recv(1024).decode("utf-8") 
-        if (data.split('$')[0]==1):
-            print("Sign up Successful! ")
-        else:
-            print("Sign up Failed! Try Again")
-    
-    elif (tokens[0]=="Login"):
-        s.send(padded_msg.encode('ascii'))
-        data = s.recv(1024).decode("utf-8") 
-        if (data.split('$')[0]==1):
-            print("Login in Successful! ")
-        else:
-            print("Wrong Credentianals or Sign Up First")
+        elif (tokens[0]=="SEND"):
+            s.send(padded_msg.encode('ascii'))
+            data = s.recv(1024).decode("utf-8")
+            if (data.split('$')[0]==1):
+                recv_ip=data.split('$')[-2]
+                recv_port=data.split('$')[-1]
+                thread = threading.Thread(target = client_connection_with_other_client, args= (recv_ip,recv_port)) 
+                thread_list.append(thread)
+                thread.start()
+                #---IMP! Yaha check krlo kch sahe krna ho ya add krna ho...not sure about this part
+            else:
+                print("USERNAME Not Present or Login or Sign up First")
+        
+        elif (tokens[0]=="LIST"):
+            s.send(padded_msg.encode('ascii'))
+            data = s.recv(1024).decode("utf-8")
+            if (data.split('$')[0]==1):
+                for i in data.split('$')[0][1]:         #Assuming ke 2nd token from serve is a list jisme naam honge
+                    print(i)                                    # groups ke
+            else:
+                print("No Group")
+        
+        elif (tokens[0]=="JOIN"):
+            s.send(padded_msg.encode('ascii'))
+            data = s.recv(1024).decode("utf-8")
+            if (data.split('$')[0]==1):
+                print("Joined Successfully")
+            else:
+                 print("Group not Present")
+        
+        elif (tokens[0]=="CREATE"):
+            s.send(padded_msg.encode('ascii'))
+            data = s.recv(1024).decode("utf-8")
+            if (data.split('$')[0]==1):
+                print("Created Successfully")
+            else:
+                print("Group Already Present! Try Again")
+        
+        padded_msg=""
+        #Session End ka bhe kch msg daal sakte hai quit ya kch bhe
 
-    elif (tokens[0]=="SEND"):
-        s.send(padded_msg.encode('ascii'))
-        data = s.recv(1024).decode("utf-8")
-        if (data.split('$')[0]==1):
-            recv_ip=data.split('$')[-2]
-            recv_port=data.split('$')[-1]
-            thread = threading.Thread(target = client_connection_with_other_client, args= (recv_ip,recv_port)) 
-            thread_list.append(thread)
-            thread.start()
-            #---IMP! Yaha check krlo kch sahe krna ho ya add krna ho...not sure about this part
-        else:
-            print("USERNAME Not Present or Login or Sign up First")
-    
-    elif (tokens[0]=="LIST"):
-        s.send(padded_msg.encode('ascii'))
-        data = s.recv(1024).decode("utf-8")
-        if (data.split('$')[0]==1):
-            for i in data.split('$')[0][1]:         #Assuming ke 2nd token from serve is a list jisme naam honge
-                print(i)                                    # groups ke
-        else:
-            print("No Group")
-    
-    elif (tokens[0]=="JOIN"):
-        s.send(padded_msg.encode('ascii'))
-        data = s.recv(1024).decode("utf-8")
-        if (data.split('$')[0]==1):
-            print("Joined Successfully")
-        else:
-             print("Group not Present")
-    
-    elif (tokens[0]=="CREATE"):
-        s.send(padded_msg.encode('ascii'))
-        data = s.recv(1024).decode("utf-8")
-        if (data.split('$')[0]==1):
-            print("Created Successfully")
-        else:
-            print("Group Already Present! Try Again")
-    
-    padded_msg=""
-    #Session End ka bhe kch msg daal sakte hai quit ya kch bhe
-
-
-
-
-            
-
-
-
-    
-
-
-
-    
-
-    
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    main()
