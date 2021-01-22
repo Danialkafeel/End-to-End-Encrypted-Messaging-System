@@ -2,15 +2,13 @@
 # programming in Python  
 import socket # for socket 
 import threading 
-
 class Server():
 
     def __init__(self, port):
         self.port = port
         
         s = socket.socket() 
-        s.bind(('', self.port))     
-        
+        s.bind(('', self.port))
         file1 = open('ip.txt', 'a') 
         m = str(s.getsockname()[1])+"\n"
         print(s.getsockname()[1])
@@ -41,4 +39,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()      
+    main()

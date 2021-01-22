@@ -45,8 +45,7 @@ class loadbalancer():
         #    break
         # reverse the given string from client 
         # send back reversed string to client 
-        c.send(val) 
-    
+        c.send(val)
         # connection closed 
         c.close() 
     def make_connection_with_server(self,data,portno):
