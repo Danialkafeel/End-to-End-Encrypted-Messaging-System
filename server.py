@@ -2,18 +2,13 @@
 # programming in Python  
 import socket # for socket 
 import threading 
-
-
-
 class Server():
 
     def __init__(self, port):
         self.port = port
         
         s = socket.socket() 
-        s.bind(('', self.port)) 
-        
-        
+        s.bind(('', self.port))
         file1 = open('ip.txt', 'a') 
         m = str(s.getsockname()[1])+"\n"
         print(s.getsockname()[1])
@@ -35,18 +30,13 @@ class Server():
 
             # Close the connection with the client  
             c.close()
-            break
 
-    
-
-
-    
-        
-
-
-
-            
-servers =[]
-for i in range(2):
+def main():
+# servers =[]
+# for i in range(2):
     se = Server(0)
-    servers.append(se)
+    # servers.append(se)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,5 +1,5 @@
 import socket # for socket 
-import threading
+import threading, sys
 #import server
 from _thread import *
 
@@ -9,11 +9,10 @@ class loadbalancer():
     modulus=0
     noofservers=3
     message =""
-    port = 0
     semaphore = 1
 
     def __init__(self, port):
-        self.port = port
+        self.port = int(port)
         s = socket.socket() 
         s.bind(('', self.port)) 
         print(s.getsockname()[1])
@@ -29,23 +28,24 @@ class loadbalancer():
             start_new_thread(self.threaded, (c,))
 
     def threaded(self,c): 
-        while True: 
+        # while True: 
     
-            # data received from client 
-            data = c.recv(1024) 
-            if data is None:
-                break
-            pno = self.get_and_update_port_number()
-            print(pno)
-            pno = pno.strip('\n')
-            val = self.make_connection_with_server(data,int(pno))
-            #if not successful: 
-            #    print('Bye')
-            #    break
-            # reverse the given string from client 
-            # send back reversed string to client 
-            c.send(val) 
-    
+        # data received from client 
+        data = c.recv(1024)
+        print("data recv",data) 
+        if data is None:
+            c.close()
+            return
+        pno = self.get_and_update_port_number()
+        pno = pno.strip('\n')
+        print("pno = ",pno)
+        val = self.make_connection_with_server(data,int(pno))
+        #if not successful: 
+        #    print('Bye')
+        #    break
+        # reverse the given string from client 
+        # send back reversed string to client 
+        c.send(val)
         # connection closed 
         c.close() 
     def make_connection_with_server(self,data,portno):
@@ -75,10 +75,8 @@ class loadbalancer():
         self.semaphore = 1
         return returnval
 
-    
+def main():
+    l = loadbalancer(sys.argv[1])
 
-
-
-
-
-l = loadbalancer(0)
+if __name__ == '__main__':
+    main()
