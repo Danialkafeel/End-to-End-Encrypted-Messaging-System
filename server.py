@@ -25,7 +25,7 @@ class Server():
             print ('Got connection from', addr ) 
             g = c.recv(1024)
             # send a thank you message to the client.  
-            c.send('Thank you for connecting'.encode()) 
+            c.send('1$127.0.0.1$8888'.encode("utf-8")) 
             print("Message sent ") 
 
             # Close the connection with the client  

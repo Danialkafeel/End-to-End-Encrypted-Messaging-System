@@ -21,20 +21,22 @@ class User(object):
     def handle_request(self,connection):        ## DHK recv side
         data = connection.recv(1024)    ##  Assume this to be public key of sender
         message = data.decode("utf-8")
-        message = message.split(' ')[1]
-        filepath = '.' + '/' + message
-        if(os.path.isfile(filepath)):
-            message = "Sending file"
-            connection.sendall(message.encode("utf-8"))
+        print("key received ",message)
+        connection.send("my key is this.".encode('utf-8'))
+        # message = message.split(' ')[1]
+        # filepath = '.' + '/' + message
+        # if(os.path.isfile(filepath)):
+        #     message = "Sending file"
+        #     connection.sendall(message.encode("utf-8"))
 
-            file_ptr = open(filepath, "rb")
-            bytes_read = file_ptr.read(1024)
-            while(bytes_read):
-                connection.send(bytes_read)
-                bytes_read = file_ptr.read(1024)
-        else:
-            message = "File not Present"
-            connection.sendall(message.encode("utf-8"))
+        #     file_ptr = open(filepath, "rb")
+        #     bytes_read = file_ptr.read(1024)
+        #     while(bytes_read):
+        #         connection.send(bytes_read)
+        #         bytes_read = file_ptr.read(1024)
+        # else:
+        #     message = "File not Present"
+        #     connection.sendall(message.encode("utf-8"))
         print("Connection is closed")
         connection.close()
         return
@@ -53,18 +55,18 @@ class User(object):
 
     def client_connection_with_other_client(self,ip,port, msg):     ## Sender of msg
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((ip,port))
+        s.connect((ip,int(port)))
         ##      Implement DHK sender side here!
         user = str(rand()%1000)+srt(self.username)
         private_key = hashlib.sha256(user.encode())
-
-
-
-        s.send(padded_msg.encode('ascii'))
+        # public_key = self.alpha ^ private_key % self.q    # exp. to be implemented.
+        public_key = "suppose key is generated."
+        s.send(padded_msg.encode('utf-8'))
         data = s.recv(1024).decode("utf-8")
         print(data)
 
     def interact_with_server(self):
+        print("\nAvailable Commands")
         print("Send <Name||Roll no.> <message>")    # 4 ways
         print("Send_group <No. of groups> <Group no.(s)> <message>")    # 4 ways    send_group 2 g1 g2 this is my g2 dsjfkdlsajfkl
         print("List")
@@ -84,11 +86,11 @@ class User(object):
                 padded_msg = "send$"+tokens[1]          # send$username_of_recv$username_of_sender
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")     #  1$IP$PORT of receiver.
+                print("receiver details received",data)
                 if (data.split('$')[0]=='1'):
                     recv_ip=data.split('$')[1]
                     recv_port=data.split('$')[2]
-                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (self,recv_ip,recv_port,tokens[2])) 
-                    thread_list.append(thread)
+                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[2])) 
                     thread.start()
                     #---IMP! Yaha check krlo kch sahe krna ho ya add krna ho...not sure about this part
                 else:
@@ -102,11 +104,11 @@ class User(object):
 
                 padded_msg = "send_group$"+tokens[1]          # send_group$username_of_recv$username_of_sender
                 s.send(padded_msg.encode('utf-8'))
-                data = s.recv(1024).decode("utf-8")     #  1$IP$PORT of receiver.
+                data = s.recv(1024).decode("utf-8")    
                 if (data.split('$')[0]=='1'):
                     recv_ip=data.split('$')[1]
                     recv_port=data.split('$')[2]
-                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (self,recv_ip,recv_port,tokens[2])) 
+                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[2])) 
                     thread_list.append(thread)
                     thread.start()
                     #---IMP! Yaha check krlo kch sahe krna ho ya add krna ho...not sure about this part
@@ -160,9 +162,9 @@ def main():
     
     initial_thread = threading.Thread(target = thisUser.client_as_server, args=(client_IP, client_PORT))
 
-    print("Available Commands")
-    print("Signup <Name> <Roll no.> <Password>")
-    print("Login <Name||Roll no.> <Password>\n")
+    print("\nWelcome !!")
+    print("New User?   Signup <Name> <Roll no.> <Password>")
+    print("Already have an account?   Login <Name||Roll no.> <Password>\n")
     while True:
         org_msg=input(":")
         # padded_msg=appending_dollar(org_msg)+client_IP+"$"+client_PORT
@@ -180,6 +182,7 @@ def main():
             padded_msg = "signup$"+username+"$"+tokens[3]
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
+            print("data recv = ",data)
             if (data.split('$')[0]=='1'):
                 print("Sign up Successful!")
             else:
@@ -199,7 +202,7 @@ def main():
             if (data.split('$')[0]=='1'):
                 print("Login in Successful!")
                 s.close()
-                thisUser.set_username(token[1])
+                thisUser.set_username(tokens[1])
                 ####                Add grps name+keys on login
                 thisUser.interact_with_server()
                 break

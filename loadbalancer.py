@@ -74,6 +74,9 @@ class loadbalancer():
         self.semaphore = not self.semaphore
         self.semaphore = 1
         return returnval
+    def __del__(self):
+        f = open('ip.txt','w')
+        f.close()
 
 def main():
     l = loadbalancer(sys.argv[1])
