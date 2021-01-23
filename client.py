@@ -1,6 +1,8 @@
 import threading, socket, os
 import sys, hashlib
 
+delimiter="@"
+dummy=""
 class User(object):
     def __init__(self, load_port):
         self.load_bal_Addr= "127.0.0.1"
@@ -74,7 +76,7 @@ class User(object):
         print("Join <Group name>\n")
         while True:
             org_msg=input(":")
-            # padded_msg=appending_dollar(org_msg)+client_IP+"$"+client_PORT
+            # padded_msg=appending_dollar(org_msg)+client_IP+"@"+client_PORT
             tokens=org_msg.split(' ')
             if (tokens[0].lower()=="send"):     
                 if len(tokens) <  3:
@@ -83,18 +85,18 @@ class User(object):
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
 
-                padded_msg = "send$"+tokens[1]          # send$dummy$username_of_sender$username_of_recv
+                padded_msg = "send"+dummy+delimiter+tokens[1]          # send@dummy@username_of_sender@username_of_recv
                 s.send(padded_msg.encode('utf-8'))
-                data = s.recv(1024).decode("utf-8")     #  1$IP$PORT of receiver.
+                data = s.recv(1024).decode("utf-8")     #  1@IP@PORT of receiver.
                 print("receiver details received",data)
-                if (data.split('$')[0]=='1'):
-                    recv_ip=data.split('$')[1]
-                    recv_port=data.split('$')[2]
+                if (data.split(delimiter)[0]=='1'):
+                    recv_ip=data.split(delimiter)[1]
+                    recv_port=data.split(delimiter)[2]
                     thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[2])) 
                     thread.start()
-                    #---IMP! Yaha check krlo kch sahe krna ho ya add krna ho...not sure about this part
+                    #---IMP! 
                 else:
-                    print(data.split('$')[1])
+                    print(data.split(delimiter)[1])
             elif (tokens[0].lower()=="send_group"):     
                 if len(tokens) <  4:
                     print("Invalid args to <send_group>")
@@ -102,51 +104,52 @@ class User(object):
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
 
-                padded_msg = "send_group$"+tokens[1]          # send_group$username_of_recv$username_of_sender
+                padded_msg = "send_group"+delimiter+tokens[1]          # send_group@username_of_recv@username_of_sender
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")    
-                if (data.split('$')[0]=='1'):
-                    recv_ip=data.split('$')[1]
-                    recv_port=data.split('$')[2]
+                if (data.split(delimiter)[0]=='1'):
+                    recv_ip=data.split(delimiter)[1]
+                    recv_port=data.split(delimiter)[2]
                     thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[2])) 
                     thread_list.append(thread)
                     thread.start()
-                    #---IMP! Yaha check krlo kch sahe krna ho ya add krna ho...not sure about this part
+                    #---
                 else:
-                    print(data.split('$')[1])
+                    print(data.split(delimiter)[1])
             
             elif (tokens[0]=="LIST"):
-                s.send(padded_msg.encode('ascii'))      # LIST$dummy$username_sender
-                data = s.recv(1024).decode("utf-8")     # 1$grpname$num_users$grpname....
-                if (data.split('$')[0]==1):
-                    for i in data.split('$')[0][1]:         #Assuming ke 2nd token from serve is a list jisme naam honge
-                        print(i)                                    # groups ke
+                s.send(padded_msg.encode('ascii'))      # LIST@dummy@username_sender
+                data = s.recv(1024).decode("utf-8")     # 1@grpname@num_users@grpname.@num
+                if (data.split(delimiter)[0]==1):
+                    grps_list=t[2:].split(delimiter)
+                    for i in range(0,len(grps_list),2):
+                        print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
-                    print("No Group")
+                    print(data.split(delimiter)[1])
             
             elif (tokens[0]=="JOIN"):
-                s.send(padded_msg.encode('ascii'))      # JOIN$grpname$username
-                data = s.recv(1024).decode("utf-8")     # 1$grp_key
-                if (data.split('$')[0]==1):
-                    print("Joined Successfully")        # server returns key of that group
+                s.send(padded_msg.encode('ascii'))      # JOIN@grpname@username
+                data = s.recv(1024).decode("utf-8")     # 1@grp_key
+                if (data.split(delimiter)[0]==1):
+                    print(data.split(delimiter)[1])        # server returns key of that group
 
                 else:
-                     print("Group not Present")
+                     print(data.split(delimiter)[1])
             
             elif (tokens[0]=="CREATE"):
                 s.send(padded_msg.encode('ascii'))
                 data = s.recv(1024).decode("utf-8")
-                if (data.split('$')[0]==1):
-                    print("Created Successfully")
+                if (data.split(delimiter)[0]==1):
+                    print(data.split(delimiter)[1])
                 else:
-                    print("Group Already Present! Try Again")
+                    print(data.split(delimiter)[1])
             else:
                 print("Invalid Command")
 
 def appending_dollar(msg):
     s=""
     for i in msg.split(' '):
-        s += i.strip()+"$"
+        s += i.strip()+delimiter
     return s
 
 def main():
@@ -167,7 +170,7 @@ def main():
     print("Already have an account?   Login <Name||Roll no.> <Password>\n")
     while True:
         org_msg=input(":")
-        # padded_msg=appending_dollar(org_msg)+client_IP+"$"+client_PORT
+        # padded_msg=appending_dollar(org_msg)+client_IP+"@"+client_PORT
         tokens=org_msg.split(' ')
         
         if (tokens[0].lower()=="signup"):
@@ -179,11 +182,11 @@ def main():
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
             # print(s.getsockname()[1])
             username = tokens[1]+tokens[2]
-            padded_msg = "SIGN$UP$"+username+"$"+tokens[3]
+            padded_msg = "SIGN"+delimiter+"UP"+delimiter+username+delimiter+tokens[3]
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             print("data recv = ",data)
-            if (data.split('$')[0]=='1'):
+            if (data.split(delimiter)[0]=='1'):
                 print("Sign up Successful!")
             else:
                 print("Sign up Failed! Try Again")
@@ -196,10 +199,10 @@ def main():
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-            padded_msg = "sign$in$"+tokens[1]+"$"+tokens[2]
+            padded_msg = "sign"+delimiter"in"+delimiter+tokens[1]+delimiter+tokens[2]
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
-            if (data.split('$')[0]=='1'):
+            if (data.split(delimiter)[0]=='1'):
                 print("Login in Successful!")
                 s.close()
                 thisUser.set_username(tokens[1])
@@ -207,7 +210,7 @@ def main():
                 thisUser.interact_with_server()
                 break
             else:
-                print(data.split('$')[1])
+                print(data.split(delimiter)[1])
         else:
             print("Please signup/login first!")
 
