@@ -83,7 +83,7 @@ class User(object):
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
 
-                padded_msg = "send$"+tokens[1]          # send$username_of_recv$username_of_sender
+                padded_msg = "send$"+tokens[1]          # send$dummy$username_of_sender$username_of_recv
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")     #  1$IP$PORT of receiver.
                 print("receiver details received",data)
@@ -116,8 +116,8 @@ class User(object):
                     print(data.split('$')[1])
             
             elif (tokens[0]=="LIST"):
-                s.send(padded_msg.encode('ascii'))
-                data = s.recv(1024).decode("utf-8")
+                s.send(padded_msg.encode('ascii'))      # LIST$dummy$username_sender
+                data = s.recv(1024).decode("utf-8")     # 1$grpname$num_users$grpname....
                 if (data.split('$')[0]==1):
                     for i in data.split('$')[0][1]:         #Assuming ke 2nd token from serve is a list jisme naam honge
                         print(i)                                    # groups ke
@@ -125,8 +125,8 @@ class User(object):
                     print("No Group")
             
             elif (tokens[0]=="JOIN"):
-                s.send(padded_msg.encode('ascii'))
-                data = s.recv(1024).decode("utf-8")
+                s.send(padded_msg.encode('ascii'))      # JOIN$grpname$username
+                data = s.recv(1024).decode("utf-8")     # 1$grp_key
                 if (data.split('$')[0]==1):
                     print("Joined Successfully")        # server returns key of that group
 
@@ -179,7 +179,7 @@ def main():
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
             # print(s.getsockname()[1])
             username = tokens[1]+tokens[2]
-            padded_msg = "signup$"+username+"$"+tokens[3]
+            padded_msg = "SIGN$UP$"+username+"$"+tokens[3]
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             print("data recv = ",data)
@@ -196,7 +196,7 @@ def main():
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-            padded_msg = "login$"+tokens[1]+"$"+tokens[2]
+            padded_msg = "sign$in$"+tokens[1]+"$"+tokens[2]
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             if (data.split('$')[0]=='1'):
