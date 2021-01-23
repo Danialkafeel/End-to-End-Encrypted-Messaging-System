@@ -17,7 +17,8 @@ def add_quotes(string):
     return "'" + string + "'"
 
 def IfExists(string1, string2):
-    return re.search(string1, string2, re.IGNORECASE)
+    search_result =  re.search(string1, string2, re.IGNORECASE)
+    return search_result
 
 def IsAccountExist(username):
     query_to_execute = data['queries']['get_column'].format("Username", "User")
@@ -68,23 +69,22 @@ def execute_query(query):
     return query_result
 
 def send_group_message(data, message, members, index, max_number_threads):
-    while(max_number_threads < len(members)):
+    while(index < len(members)):
         peer = members[index]
         #get ip of peer
-        query_to_execute = data['queries']['get_column_conditional_query'].format("ip", "User", "Username = {}".format(peer))
+        query_to_execute = data['queries']['get_column_conditional_query'].format("ip", "User", "Username = {}".format(add_quotes(peer)))
         ip = execute_query(query_to_execute)
         ip = ip[0][0]
 
         #get port of peer
-        query_to_execute = data['queries']['get_column_conditional_query'].format("port", "User", "Username = {}".format(peer))
+        query_to_execute = data['queries']['get_column_conditional_query'].format("port", "User", "Username = {}".format(add_quotes(peer)))
         port = execute_query(query_to_execute)
         port = ip[0][0]
         
         #Connect with client and send him the message
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(ip, port)
-
         try:
+            s.connect( (ip ,int(port)) )
             s.send(message.encode("UTF-8"))
         except Exception as e:
             print(e)
@@ -116,14 +116,15 @@ def parse_message(data, message):
             return '1' + delimiter + 'Your account has been made'
     else:
         if IfExists("SIGN" + delimiter + "IN", message):
-            if IsAccountExist(username):
+            password = message.split(delimiter)[3]
+            if not IsAccountExist(username):
                 return '0' + delimiter + 'Username is incorrect'
             
-            if IsPasswordExist(password):
+            if not IsPasswordExist(password):
                 return '0' + delimiter + 'Password is incorrect'
     
             ###Update query, change the signed in column status
-            query_to_execute = data['queries']['update_query'].format("User", "IsSignedIn = '1'", "Username = {}".format(username))
+            query_to_execute = data['queries']['update_query'].format("User", "IsSignedIn = '1'", "Username = {}".format(add_quotes(username)))
             execute_query(query_to_execute)
 
             ##Send the random keys of groups user is part of
@@ -142,7 +143,7 @@ def parse_message(data, message):
 
             return '1' + (delimiter if ans_str == '' else ans_str)
 
-        elif IfExists("SEND", message):
+        elif(IfExists("SEND", message) and not IfExists("SEND_GROUP", message)):
             peer_name = message.split(delimiter)[3]
             if not IsAccountExist(username):
                 return '0' + delimiter + 'Make an account first'
@@ -256,7 +257,7 @@ def parse_message(data, message):
             randomkey = execute_query(query_to_execute)
             randomkey = randomkey[0][0]
             
-            return '1' + delimiter + 'You have joined the group' + delimiter + randomkey
+            return '1' + delimiter + randomkey
 
         elif IfExists("SEND_GROUP", message):
             group = message.split(delimiter)[1]
@@ -268,7 +269,7 @@ def parse_message(data, message):
             if username not in members:
                 return '0' + delimiter + 'You are not part of the group'
             
-            members = members.remove(username)
+            members.remove(username)
             num_members = len(members)
 
             if num_members == 0:
@@ -282,8 +283,9 @@ def parse_message(data, message):
             #Create threads and send the messages
             index = 0
             for _ in range(min(MAX_NUM_THREADS, num_members)):
-                threading.Thread(target = send_group_message, args = (data, message, members, index, MAX_NUM_THREADS,))
+                thread = threading.Thread(target = send_group_message, args = (data, message, members, index, MAX_NUM_THREADS,))
                 index += 1
+                thread.start()
             
             
             mutex.acquire()
@@ -314,8 +316,10 @@ def init_db():
 if __name__ == "__main__":
     data = init_db()
 
-    messages = ["SIGN UP user1 pwd1 127.0.0.1 5000", "SIGN UP user2 pwd2 127.0.0.1 6000", "SIGN UP user1 pwd2 127.0.0.1 5000", "SEND DUMMY user1 user2",
-    "CREATE group1 user1 100", "CREATE group2 user2 200", "JOIN group1 user2", "JOIN group2 user1", "LIST groups user1"]
+    messages = ["SIGN UP user1 pwd1 127.0.0.1 5000", "SIGN UP user2 pwd2 127.0.0.1 6000", "SIGN UP user3 pwd3 127.0.0.1 7000", 
+    "SIGN UP user1 pwd2 127.0.0.1 5000", "SEND DUMMY user1 user2","CREATE group1 user1 100", "CREATE group2 user2 200", 
+    "JOIN group1 user2", "JOIN group2 user1", "JOIN group1 user3", "JOIN group3 user3", "LIST groups user1", 
+    "SIGN IN user1 pwd1", "SIGN IN user2 pwd3", "SEND_GROUP group1 user1 Hi",]
     for message in messages:
         message = '@'.join(message.split(' '))
         try:
