@@ -1,9 +1,17 @@
 import os, sqlite3, json
-import re
+import re, random
+import threading, socket
+from threading import Lock
 
 database_path = "./MyDatabase.db"
 json_file_path = "./queries.json"
 delimiter = '@'
+MAX_NUM_THREADS = 3
+I_AM_BUSY = False
+
+def generate_random_key():
+    value = random.randint(10000000, 1000000000)
+    return str(value)
 
 def add_quotes(string):
     return "'" + string + "'"
@@ -59,16 +67,44 @@ def execute_query(query):
 
     return query_result
 
+def send_group_message(data, message, members, index, max_number_threads):
+    while(max_number_threads < len(members)):
+        peer = members[index]
+        #get ip of peer
+        query_to_execute = data['queries']['get_column_conditional_query'].format("ip", "User", "Username = {}".format(peer))
+        ip = execute_query(query_to_execute)
+        ip = ip[0][0]
+
+        #get port of peer
+        query_to_execute = data['queries']['get_column_conditional_query'].format("port", "User", "Username = {}".format(peer))
+        port = execute_query(query_to_execute)
+        port = ip[0][0]
+        
+        #Connect with client and send him the message
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(ip, port)
+
+        try:
+            s.send(message.encode("UTF-8"))
+        except Exception as e:
+            print(e)
+
+        s.close()
+        index += max_number_threads
+    
+    return
+
 def parse_message(data, message):
+    #get username of person sending request
     username = message.split(delimiter)[2]
     
     if IfExists('SIGN' + delimiter + 'UP', message):
         if IsAccountExist(username):
             return '0' + delimiter + 'Username already exists'
         else:
-            password = 'pwd1'
-            ip = '127.0.0.1'
-            port = '5000'
+            password = message.split(delimiter)[3]
+            ip = message.split(delimiter)[4]
+            port = message.split(delimiter)[5]
             values = add_quotes(username) + ',' + add_quotes(password) + ',' +  add_quotes(ip) + ',' + add_quotes(port)  + ',' + "'1'" + ',' + "'-'"
             query_to_execute = data['queries']['insert_into'].format("User", values)
             execute_query(query_to_execute)
@@ -90,7 +126,21 @@ def parse_message(data, message):
             query_to_execute = data['queries']['update_query'].format("User", "IsSignedIn = '1'", "Username = {}".format(username))
             execute_query(query_to_execute)
 
-            return '1' + "You are signed in"
+            ##Send the random keys of groups user is part of
+            query_to_execute = data['queries']['get_column_conditional_query'].format("PartofGroups", "User", "Username = {}".format(add_quotes(username)))
+            part_of_groups = execute_query(query_to_execute)
+            part_of_groups = part_of_groups[0][0].split(delimiter)
+
+            ans_str = ''
+            for group in part_of_groups:
+                if(group == '-'):
+                    continue
+                query_to_execute = data['queries']['get_column_conditional_query'].format("randomkey", 'Group_info', "Groupname = {}".format(add_quotes(group)))
+                randomkey = execute_query(query_to_execute)
+                randomkey = randomkey[0][0]
+                ans_str = ans_str + delimiter + group + delimiter + randomkey 
+
+            return '1' + (delimiter if ans_str == '' else ans_str)
 
         elif IfExists("SEND", message):
             peer_name = message.split(delimiter)[3]
@@ -162,23 +212,13 @@ def parse_message(data, message):
             execute_query(query_to_execute)
 
             #Create entry in the group table
-            try:
-                #Pay attention here
-                randomkey = message.split(delimiter)[3]
-            
-            except Exception as e:
-                randomkey = '300'
-
+            randomkey = generate_random_key()
             members = username
             query_to_execute = data['queries']['insert_into'].format("Group_info", add_quotes(group) + ',' + add_quotes(members) + ',' + add_quotes(randomkey))
             execute_query(query_to_execute)
 
-            #get number of people in group
-            number_of_people_in_group = 1
+            return '1' + delimiter + "Group created" + delimiter + str(randomkey)
 
-            return '1' + delimiter + "Group created" + delimiter + str(number_of_people_in_group)
-
-        #Should I send random key also here?
         elif IfExists("JOIN", message):
             group = message.split(delimiter)[1]
             if not IsAccountExist(username):
@@ -199,22 +239,59 @@ def parse_message(data, message):
                 part_of_groups = group
             else:
                 part_of_groups = part_of_groups + delimiter + group
+            
+            query_to_execute = data['queries']['update_query'].format("User", "PartofGroups = {}".format(add_quotes(part_of_groups)), "Username = {}".format(add_quotes(username)))
+            execute_query(query_to_execute)
 
             ####Update group members####
-            ##Get members already in group
             query_to_execute = data['queries']['get_column_conditional_query'].format('members', 'Group_info', 'Groupname = {}'.format(add_quotes(group)))
             group_members = execute_query(query_to_execute)
             group_members = group_members[0][0]
-            number_of_people_in_group = len(group_members.split(delimiter))+1
-            
             group_members = group_members + delimiter + username
             query_to_execute = data['queries']['update_query'].format("Group_info", "members = {}".format(add_quotes(group_members)), "Groupname = {}".format(add_quotes(group)))
             execute_query(query_to_execute)
+
+            ##Get random key of group
+            query_to_execute = data['queries']['get_column_conditional_query'].format('randomkey', 'Group_info', 'Groupname = {}'.format(add_quotes(group)))
+            randomkey = execute_query(query_to_execute)
+            randomkey = randomkey[0][0]
             
-            return '1' + delimiter + 'You have joined the group' + delimiter + str(number_of_people_in_group)
+            return '1' + delimiter + 'You have joined the group' + delimiter + randomkey
 
-        return '0' + delimiter + 'Request is not appropriate'
+        elif IfExists("SEND_GROUP", message):
+            group = message.split(delimiter)[1]
+            
+            #get all the members in the group
+            query_to_execute = data['queries']['get_column_conditional_query'].format('members', 'Group_info', "Groupname = {}".format(add_quotes(group)))
+            members = execute_query(query_to_execute)
+            members = members[0][0].split(delimiter)
+            if username not in members:
+                return '0' + delimiter + 'You are not part of the group'
+            
+            members = members.remove(username)
+            num_members = len(members)
 
+            if num_members == 0:
+                return '1'
+            
+            mutex = Lock()
+            mutex.acquire()
+            I_AM_BUSY = True
+            mutex.release()
+
+            #Create threads and send the messages
+            index = 0
+            for _ in range(min(MAX_NUM_THREADS, num_members)):
+                threading.Thread(target = send_group_message, args = (data, message, members, index, MAX_NUM_THREADS,))
+                index += 1
+            
+            
+            mutex.acquire()
+            I_AM_BUSY = False
+            mutex.release()
+            
+            return '1'
+            
 def init_db():
     #Open the configuration json file
     with open(json_file_path) as f:
