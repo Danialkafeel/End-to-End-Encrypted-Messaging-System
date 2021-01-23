@@ -1,0 +1,17 @@
+{
+    "tables" : {
+        "User" : {
+            "schema" : ["Username", "password", "ip", "port", "IsSignedIn", "PartofGroups"]
+        },
+        "Group_info": {
+            "schema": ["Groupname","members", "randomkey"]
+        }
+    },
+    "queries": {
+        "create_table" : "CREATE TABLE {} ({});",
+        "insert_into" : "INSERT INTO {} VALUES ({});",
+        "get_column" : "SELECT {} FROM {}",
+        "get_column_conditional_query":  "SELECT {} FROM {} WHERE {};",
+        "update_query": "UPDATE {} SET {} WHERE {};"
+    }
+}

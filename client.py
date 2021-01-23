@@ -2,7 +2,7 @@ import threading, socket, os
 import sys, hashlib
 
 delimiter="@"
-dummy=""
+dummy="a"
 class User(object):
     def __init__(self, load_port):
         self.load_bal_Addr= "127.0.0.1"
@@ -199,7 +199,7 @@ def main():
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-            padded_msg = "sign"+delimiter"in"+delimiter+tokens[1]+delimiter+tokens[2]
+            padded_msg = "sign"+delimiter+"in"+delimiter+tokens[1]+delimiter+tokens[2]
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             if (data.split(delimiter)[0]=='1'):

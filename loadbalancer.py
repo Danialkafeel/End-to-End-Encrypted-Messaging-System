@@ -50,7 +50,8 @@ class loadbalancer():
         c.close() 
     def make_connection_with_server(self,data,portno):
         con = socket.socket()  
-        # connect to the server on local computer  
+        # connect to the server on local computer 
+         
         con.connect(('127.0.0.1', portno))  
         
         #a = input("Type your message: ")
