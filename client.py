@@ -121,7 +121,7 @@ class User(object):
                 s.send(padded_msg.encode('ascii'))      # LIST@dummy@username_sender
                 data = s.recv(1024).decode("utf-8")     # 1@grpname@num_users@grpname.@num
                 if (data.split(delimiter)[0]==1):
-                    grps_list=t[2:].split(delimiter)
+                    grps_list=data[2:].split(delimiter)
                     for i in range(0,len(grps_list),2):
                         print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
