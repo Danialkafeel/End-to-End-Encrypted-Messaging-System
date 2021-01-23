@@ -32,10 +32,8 @@ class Server():
             c.close()
 
 def main():
-# servers =[]
-# for i in range(2):
     se = Server(0)
-    # servers.append(se)
+    
 
 
 if __name__ == '__main__':
