@@ -1,4 +1,10 @@
 
+5.	username without rollno. is considered same on server		,		username without rollno. with correct password ==> server crashes.
+
+4. after login, port is not being updated in the DB.
+
 1.	Client not allowed to join/create the same grp again
 
 2.	Always take SHA256 of the group key received.
+
+3.	Return if the receiver is logged in or not.

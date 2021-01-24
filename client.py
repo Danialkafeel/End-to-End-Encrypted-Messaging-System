@@ -1,5 +1,6 @@
 import threading, socket, os
 import sys, hashlib
+from random import randrange
 
 delimiter="@"
 
@@ -10,9 +11,9 @@ class User(object):
         self.username = ""
         self.isLoggedIn = False
         self.groupkeys = dict()   # grp name -> keys map
-        # self.q = FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF
-        # 2410312426921032588552076022197566074856950548502459942654116941958108831682612228890093858261341614673227141477904012196503648957050582631942730706805009223062734745341073406696246014589361659774041027169249453200378729434170325843778659198143763193776859869524088940195577346119843545301547043747207749969763750084308926339295559968882457872412993810129130294592999947926365264059284647209730384947211681434464714438488520940127459844288859336526896320919633919
+        self.q = int("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF", 16)
         self.alpha = 2
+        # 2410312426921032588552076022197566074856950548502459942654116941958108831682612228890093858261341614673227141477904012196503648957050582631942730706805009223062734745341073406696246014589361659774041027169249453200378729434170325843778659198143763193776859869524088940195577346119843545301547043747207749969763750084308926339295559968882457872412993810129130294592999947926365264059284647209730384947211681434464714438488520940127459844288859336526896320919633919
 
     def set_username(self,usern):
         self.username = usern
@@ -22,9 +23,14 @@ class User(object):
 
     def handle_request(self,connection):        ## DHK recv side
         data = connection.recv(1024)    ##  Assume this to be public key of sender
-        message = data.decode("utf-8")
-        print("key received ",message)
-        connection.send("my key is this.".encode('utf-8'))
+        print("public_key of sender = ",data)
+        user = str(randrange(1000)) + str(self.username)
+        private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
+        public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+        print("my public_key = ",public_key)
+        connection.send(str(public_key).encode('utf-8'))
+        shared_key = pow(data,private_key,self.q) 
+        print("shared_key found ",shared_key)
         # message = message.split(' ')[1]
         # filepath = '.' + '/' + message
         # if(os.path.isfile(filepath)):
@@ -46,26 +52,34 @@ class User(object):
     def client_as_server(self,host_addr, port):             ##      Receiver of msg
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((host_addr, int(port)))
+        print("yo")
+        print(s.getsockname()[1])
 
         thread_list=[]
         while True:
             s.listen()
             conn, addr = s.accept()
-            thread = threading.Thread(target = handle_request, args= (self,conn, ))
+            thread = threading.Thread(target = self.handle_request, args= (conn, ))
             thread_list.append(thread)
             thread.start()
 
     def client_connection_with_other_client(self,ip,port, msg):     ## Sender of msg
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("ip, port = ",ip,port)
         s.connect((ip,int(port)))
-        ##      Implement DHK sender side here!
-        user = str(rand()%1000)+srt(self.username)
-        private_key = hashlib.sha256(user.encode())
-        # public_key = self.alpha ^ private_key % self.q    # exp. to be implemented.
-        public_key = "suppose key is generated."
-        s.send(padded_msg.encode('utf-8'))
+        # print(s.getsockname()[1])
+        user = str(randrange(1000)) + str(self.username)                  #   Implement DHK sender side here!
+        private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
+        public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+        print("my public_key = ",public_key)
+        s.send(str(public_key).encode('utf-8'))
         data = s.recv(1024).decode("utf-8")
+        print("public_key received = ",data)
+
+        shared_key = pow(data,int(private_key),self.q)
+        print("shared_key found ",shared_key)
         print(data)
+        s.close()
 
     def interact_with_server(self):
         print("\nAvailable Commands")
@@ -90,6 +104,7 @@ class User(object):
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")     #  1@IP@PORT of receiver.
                 print("receiver details received",data)
+                s.close()
                 if (data.split(delimiter)[0]=='1'):
                     recv_ip=data.split(delimiter)[1]
                     recv_port=data.split(delimiter)[2]
@@ -98,7 +113,6 @@ class User(object):
                     #---IMP! 
                 else:
                     print(data.split(delimiter)[1])
-                s.close()
 
             elif (tokens[0].lower()=="send_group"):              #send_group grpname msg  FORMAT by pdf/us.
                 if len(tokens) != 3:
@@ -184,6 +198,7 @@ def main():
     thisUser = User(sys.argv[2])
     
     initial_thread = threading.Thread(target = thisUser.client_as_server, args=(client_IP, client_PORT))
+    initial_thread.start()
 
     print("\nWelcome !!")
     print("New User?   Sign up <Name> <Roll no.> <Password>")
@@ -223,8 +238,10 @@ def main():
             #print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
             padded_msg = "SIGN"+delimiter+"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
+            # print(""padded_msg)
             s.send(padded_msg.encode('utf-8'))
-            data = s.recv(1024).decode("utf-8") 
+            data = s.recv(1024).decode("utf-8")
+            print("data = ",data)
             if (data.split(delimiter)[0]=='1'):
                 print("Successfully LOGGED IN!")
                 thisUser.set_username(tokens[1])
