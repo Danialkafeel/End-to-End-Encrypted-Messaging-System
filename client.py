@@ -2,7 +2,7 @@ import threading, socket, os
 import sys, hashlib
 
 delimiter="@"
-dummy="a"
+
 class User(object):
     def __init__(self, load_port):
         self.load_bal_Addr= "127.0.0.1"
@@ -84,8 +84,9 @@ class User(object):
                     continue
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
-
-                padded_msg = "send"+dummy+delimiter+tokens[1]          # send@dummy@username_of_sender@username_of_recv
+                #send usnername msg -FORMAT by pdf
+                #SEND@dummy@username_of_sender@username_of_recv -FORMAT by SERVER
+                padded_msg = "SEND"+delimiter+"dummy"+delimiter+self.username+delimiter+tokens[1]       
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")     #  1@IP@PORT of receiver.
                 print("receiver details received",data)
@@ -97,14 +98,14 @@ class User(object):
                     #---IMP! 
                 else:
                     print(data.split(delimiter)[1])
-            elif (tokens[0].lower()=="send_group"):     
-                if len(tokens) <  4:
+            elif (tokens[0].lower()=="send_group"):              #send_group grpname msg  FORMAT by pdf/us.
+                if len(tokens) != 3:
                     print("Invalid args to <send_group>")
                     continue
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
-
-                padded_msg = "send_group"+delimiter+tokens[1]          # send_group@username_of_recv@username_of_sender
+                #SEND_GROUP@group1@user1@msg FORMAT by server
+                padded_msg = "SEND_GROUP"+delimiter+tokens[1]+delimiter+self.username+delimiter+tokens[2]          
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")    
                 if (data.split(delimiter)[0]=='1'):
@@ -117,44 +118,41 @@ class User(object):
                 else:
                     print(data.split(delimiter)[1])
             
-            elif (tokens[0]=="LIST"):
-                s.send(padded_msg.encode('ascii'))      # LIST@dummy@username_sender
-                data = s.recv(1024).decode("utf-8")     # 1@grpname@num_users@grpname.@num
-                if (data.split(delimiter)[0]==1):
+            elif (tokens[0].upper()=="LIST"):                      #LIST
+                padded_msg="LIST"+delimiter+"groups"+delimiter+self.username      #LIST@groups@user1- FORMAT SERVER
+                s.send(padded_msg.encode('ascii'))         
+                data = s.recv(1024).decode("utf-8")                 # 1@grpname@num_users@grpname@num
+                if (data.split(delimiter)[0]=='1'):
                     grps_list=data[2:].split(delimiter)
                     for i in range(0,len(grps_list),2):
                         print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
                     print(data.split(delimiter)[1])
             
-            elif (tokens[0]=="JOIN"):
-                s.send(padded_msg.encode('ascii'))      # JOIN@grpname@username
-                data = s.recv(1024).decode("utf-8")     # 1@grp_key
-                if (data.split(delimiter)[0]==1):
+            elif (tokens[0].upper()=="JOIN"):
+                padded_msg="JOIN"+delimiter+tokens[1]+delimiter+self.username                        
+                s.send(padded_msg.encode('ascii'))          #JOIN@group1@user2 -FORMAT SERVER
+                data = s.recv(1024).decode("utf-8")         # 1@grp_key
+                if (data.split(delimiter)[0]=='1'):
                     print(data.split(delimiter)[1])        # server returns key of that group
-
                 else:
                      print(data.split(delimiter)[1])
             
-            elif (tokens[0]=="CREATE"):
-                s.send(padded_msg.encode('ascii'))
+            elif (tokens[0].upper()=="CREATE"):
+                padded_msg="CREATE"+delimiter+tokens[1]+delimiter+self.username        
+                s.send(padded_msg.encode('ascii'))                   #CREATE@group1@user1 -FORMAT SERVER 
                 data = s.recv(1024).decode("utf-8")
-                if (data.split(delimiter)[0]==1):
-                    print(data.split(delimiter)[1])
+                if (data.split(delimiter)[0]=='1'):               #1@group_created@randomkey
+                    print("Group Created! ")
                 else:
                     print(data.split(delimiter)[1])
             else:
                 print("Invalid Command")
 
-def appending_dollar(msg):
-    s=""
-    for i in msg.split(' '):
-        s += i.strip()+delimiter
-    return s
 
 def main():
     if len(sys.argv) != 3:
-        print("Type in the format : client.py <client_PORT> <load_bal_port>")
+        print("Type in the format : client.py <client_PORT> <load_balancer_port>")
         return
     #---Listening for other clients or servers
     client_IP = "127.0.0.1"
@@ -172,38 +170,38 @@ def main():
         org_msg=input(":")
         # padded_msg=appending_dollar(org_msg)+client_IP+"@"+client_PORT
         tokens=org_msg.split(' ')
-        
-        if (tokens[0].lower()=="signup"):
-            if len(tokens) != 4:
+        signup_check=tokens[0].lower()+" "+tokens[1].lower()
+        if (signup_check=="sign up"):                        #SIGN UP U1 R1 P1  #Indx-0 1 2 3 4 #LEN-5
+            if len(tokens) != 5:
                 print("Invalid args to <Signup>")
                 continue
-            #---Connecting to Load Balancer
+            #---Connecting to Load Balancer                        
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
             # print(s.getsockname()[1])
-            username = tokens[1]+tokens[2]
-            padded_msg = "SIGN"+delimiter+"UP"+delimiter+username+delimiter+tokens[3]
-            s.send(padded_msg.encode('utf-8'))
+            username = tokens[2]+tokens[3]                                             
+            padded_msg="SIGN"+delimiter+"UP"+delimiter+username+delimiter+tokens[4]+delimiter+client_IP+delimiter+client_PORT
+            s.send(padded_msg.encode('utf-8'))                          #SIGN@UP@U1R1@P1@IP@PORT
             data = s.recv(1024).decode("utf-8") 
             print("data recv = ",data)
             if (data.split(delimiter)[0]=='1'):
-                print("Sign up Successful!")
+                print("Successfully SIGNED UP!")
             else:
                 print("Sign up Failed! Try Again")
             s.close()
         
-        elif (tokens[0].lower()=="login"):
+        elif (tokens[0].lower()=="login"):                              #login username passwd
             if len(tokens) != 3:
                 print("Invalid args to <Login>")
                 continue            
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-            padded_msg = "sign"+delimiter+"in"+delimiter+tokens[1]+delimiter+tokens[2]
+            padded_msg = "SIGN"+delimiter"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             if (data.split(delimiter)[0]=='1'):
-                print("Login in Successful!")
+                print("Successfully LOGGED IN!")
                 s.close()
                 thisUser.set_username(tokens[1])
                 ####                Add grps name+keys on login
