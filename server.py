@@ -28,14 +28,16 @@ def IsAccountExist(data,username):
     print(type(data))
     query_to_execute = data['queries']['get_column'].format("Username", "User")
     usernames = execute_query(query_to_execute)
-    usernames = ' '.join([user[0] for user in usernames])
-    return IfExists(username, usernames)
+    return (username in usernames)
+    # usernames = ' '.join([user[0] for user in usernames])
+    # return IfExists(username, usernames)
 
 def IsPasswordExist(data,password):
     query_to_execute = data['queries']['get_column'].format("password", "User")
     passwords = execute_query(query_to_execute)
-    passwords = ' '.join([password[0] for password in passwords])
-    return IfExists(password, passwords)
+    return (password in passwords)
+    # passwords = ' '.join([password[0] for password in passwords])
+    # return IfExists(password, passwords)
 
 def IsSignedIn(data,username):
     query_to_execute = data['queries']['get_column_conditional_query'].format("IsSignedIn", "User", "Username = {}".format(add_quotes(username)))
@@ -136,6 +138,7 @@ def parse_message(data, message):
             ##Send the random keys of groups user is part of
             query_to_execute = data['queries']['get_column_conditional_query'].format("PartofGroups", "User", "Username = {}".format(add_quotes(username)))
             part_of_groups = execute_query(query_to_execute)
+            # print(part_of_groups)
             part_of_groups = part_of_groups[0][0].split(delimiter)
 
             ans_str = ''
