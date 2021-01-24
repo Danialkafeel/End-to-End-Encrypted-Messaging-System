@@ -24,19 +24,18 @@ def IfExists(string1, string2):
     return search_result
 
 def IsAccountExist(data,username):
-    print(data)
-    print(type(data))
     query_to_execute = data['queries']['get_column'].format("Username", "User")
     usernames = execute_query(query_to_execute)
+    usernames = [user[0] for user in usernames]
+    # print(usernames)
     return (username in usernames)
-    # usernames = ' '.join([user[0] for user in usernames])
     # return IfExists(username, usernames)
 
 def IsPasswordExist(data,password):
     query_to_execute = data['queries']['get_column'].format("password", "User")
     passwords = execute_query(query_to_execute)
+    passwords = [password[0] for password in passwords]
     return (password in passwords)
-    # passwords = ' '.join([password[0] for password in passwords])
     # return IfExists(password, passwords)
 
 def IsSignedIn(data,username):
@@ -268,7 +267,7 @@ def parse_message(data, message):
             
             return '1' + delimiter + randomkey
 
-        elif IfExists("SEND_GROUP", message):
+        elif IfExists("SEND_GROUP", message):       #   SEND_GROUP$DUMMY$USERNAME$message$G1$G2$G3
             group = message.split(delimiter)[1]
             
             #get all the members in the group
@@ -368,9 +367,6 @@ class Server():
 def main():
     
     data = init_db()
-    print(type(data))
-    print(data)
-    print(data.keys())
     
     se = Server(0)
     se.start(data)

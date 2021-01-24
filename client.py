@@ -1,6 +1,8 @@
 import threading, socket, os
 import sys, hashlib
 from random import randrange
+import pyDes
+import base64
 
 delimiter="@"
 
@@ -29,8 +31,10 @@ class User(object):
         public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
         print("my public_key = ",public_key)
         connection.send(str(public_key).encode('utf-8'))
-        shared_key = pow(data,private_key,self.q) 
+        shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
         print("shared_key found ",shared_key)
+        k = pyDes.triple_des(base64.b64decode(str(shared_key)), mode= pyDes.CBC, padmode= pyDes.PAD_PKCS5)
+
         # message = message.split(' ')[1]
         # filepath = '.' + '/' + message
         # if(os.path.isfile(filepath)):
@@ -52,8 +56,7 @@ class User(object):
     def client_as_server(self,host_addr, port):             ##      Receiver of msg
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((host_addr, int(port)))
-        print("yo")
-        print(s.getsockname()[1])
+        # print(s.getsockname()[1])
 
         thread_list=[]
         while True:
@@ -74,11 +77,13 @@ class User(object):
         print("my public_key = ",public_key)
         s.send(str(public_key).encode('utf-8'))
         data = s.recv(1024).decode("utf-8")
-        print("public_key received = ",data)
+        # print("public_key received = ",data)
 
-        shared_key = pow(data,int(private_key),self.q)
+        shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)
         print("shared_key found ",shared_key)
-        print(data)
+        print(len(str(shared_key)))
+        k = pyDes.triple_des(base64.b64decode(str(shared_key)),mode = pyDes.CBC, padmode=pyDes.PAD_PKCS5)
+        print(k.getKey())
         s.close()
 
     def interact_with_server(self):
