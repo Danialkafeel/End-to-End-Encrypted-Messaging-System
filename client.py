@@ -86,7 +86,7 @@ class User(object):
         print("my public_key = ",public_key)
         s.send(str(public_key).encode('utf-8'))
         data = s.recv(1024).decode("utf-8")
-        # print("public_key received = ",data)
+        print("public_key received = ",data)
 
         shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)
         #print("shared_key found ",shared_key)
