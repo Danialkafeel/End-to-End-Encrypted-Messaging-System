@@ -9,5 +9,4 @@ import subprocess, os
 from subprocess import Popen, PIPE, call
 
 for i in range(3):
-    
     status = subprocess.call("gnome-terminal -- python3 " + path3, shell=True)
