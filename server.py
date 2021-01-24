@@ -8,6 +8,8 @@ json_file_path = "./queries.json"
 delimiter = '@'
 MAX_NUM_THREADS = 3
 I_AM_BUSY = False
+data =None
+
 
 
 def generate_random_key():
@@ -21,25 +23,27 @@ def IfExists(string1, string2):
     search_result =  re.search(string1, string2, re.IGNORECASE)
     return search_result
 
-def IsAccountExist(username):
+def IsAccountExist(data,username):
+    print(data)
+    print(type(data))
     query_to_execute = data['queries']['get_column'].format("Username", "User")
     usernames = execute_query(query_to_execute)
     usernames = ' '.join([user[0] for user in usernames])
     return IfExists(username, usernames)
 
-def IsPasswordExist(password):
+def IsPasswordExist(data,password):
     query_to_execute = data['queries']['get_column'].format("password", "User")
     passwords = execute_query(query_to_execute)
     passwords = ' '.join([password[0] for password in passwords])
     return IfExists(password, passwords)
 
-def IsSignedIn(username):
+def IsSignedIn(data,username):
     query_to_execute = data['queries']['get_column_conditional_query'].format("IsSignedIn", "User", "Username = {}".format(add_quotes(username)))
     status = execute_query(query_to_execute)
     
     return status[0][0] == '1'
 
-def IsGroupExist(group):
+def IsGroupExist(data,group):
     query_to_execute = data['queries']['get_column'].format("Groupname", "Group_info")
     groups = execute_query(query_to_execute)
     groups = ' '.join([group[0] for group in groups])
@@ -101,7 +105,7 @@ def parse_message(data, message):
     username = message.split(delimiter)[2]
     
     if IfExists('SIGN' + delimiter + 'UP', message):
-        if IsAccountExist(username):
+        if IsAccountExist(data,username):
             return '0' + delimiter + 'Username already exists'
         else:
             password = message.split(delimiter)[3]
@@ -299,12 +303,12 @@ def parse_message(data, message):
 def init_db():
     #Open the configuration json file
     with open(json_file_path) as f:
-        data = json.load(f)
+        ldata = json.load(f)
 
     if not os.path.isfile(database_path):
-        for table_name in data['tables'].keys():
-            query_to_execute = data["queries"]["create_table"]
-            schema = " VARCHAR (20) ,".join(data["tables"][table_name]["schema"])
+        for table_name in ldata['tables'].keys():
+            query_to_execute = ldata["queries"]["create_table"]
+            schema = " VARCHAR (20) ,".join(ldata["tables"][table_name]["schema"])
             query_to_execute = query_to_execute.format(table_name, schema)
             #print(query_to_execute)
             execute_query(query_to_execute)
@@ -312,32 +316,38 @@ def init_db():
     else:
         print("Database File already exists")
     
-    return data
+    
+    return ldata
 
 
 class Server():
+    s=None
+    port=None
 
     def __init__(self, port):
-        data = init_db()
+        
         self.port = port
-        s = socket.socket() 
-        s.bind(('', self.port))
+        self.s = socket.socket() 
+        self.s.bind(('', self.port))
         file1 = open('ip.txt', 'a') 
-        m = str(s.getsockname()[1])+"\n"
-        print(s.getsockname()[1])
+        m = str(self.s.getsockname()[1])+"\n"
+        print(self.s.getsockname()[1])
         file1.write(m) 
         file1.close()
-  
+        
+       
         # Writing a string to file 
-         
-        s.listen(5) 
-
+    def start(self,data):
+        self.s.listen(5)
+        
         while True:  
             # Establish connection with client.  
-            c,addr = s.accept()      
+            c,addr = self.s.accept()      
             print ('Got connection from', addr ) 
             message = c.recv(1024).decode('utf-8')
-            response_message = parse_message(self.data, message)  
+            print(message)
+            response_message = parse_message(data,message)
+            print(response_message)  
             c.send(response_message.encode("utf-8")) 
             print("Message sent ") 
 
@@ -345,7 +355,14 @@ class Server():
             c.close()
 
 def main():
+    
+    data = init_db()
+    print(type(data))
+    print(data)
+    print(data.keys())
+    
     se = Server(0)
+    se.start(data)
     
 if __name__ == '__main__':
     main()
