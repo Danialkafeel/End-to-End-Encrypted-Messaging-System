@@ -123,12 +123,12 @@ class User(object):
 
             elif (tokens[0].upper()=="LIST"):                            #LIST  FORMAT PDF
                 if len(tokens) != 1:
-                    print("Invalid args to <send>")
+                    print("Invalid args to <list>")
                     continue
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
+                s.connect((self.load_bal_Addr, self.load_bal_port))
                 padded_msg="LIST"+delimiter+"groups"+delimiter+self.username      #LIST@groups@user1- FORMAT SERVER
-                s.send(padded_msg.encode('ascii'))         
+                s.send(padded_msg.encode('utf-8'))         
                 data = s.recv(1024).decode("utf-8")                 # 1@grpname@num_users@grpname@num
                 if (data.split(delimiter)[0]=='1'):
                     grps_list=data[2:].split(delimiter)
@@ -140,12 +140,13 @@ class User(object):
             
             elif (tokens[0].upper()=="JOIN"):                           #JOIN g1-FORMAT PDF
                 if len(tokens) != 2:
-                    print("Invalid args to <send>")
+                    print("Invalid args to <join>")
                     continue         
+
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-                padded_msg="JOIN"+delimiter+tokens[1]+delimiter+self.username                        
-                s.send(padded_msg.encode('ascii'))          #JOIN@group1@user2 -FORMAT SERVER
+                s.connect((self.load_bal_Addr,self.load_bal_port))
+                padded_msg="JOIN"+delimiter+tokens[1]+delimiter+self.username                   
+                s.send(padded_msg.encode('utf-8'))          #JOIN@group1@user2 -FORMAT SERVER
                 data = s.recv(1024).decode("utf-8")         # 1@grp_key
                 if (data.split(delimiter)[0]=='1'):
                     print(data.split(delimiter)[1])        # server returns key of that group
@@ -155,20 +156,20 @@ class User(object):
             
             elif (tokens[0].upper()=="CREATE"):             #create g1 FORMAT PDF
                 if len(tokens) != 2:
-                    print("Invalid args to <send>")
+                    print("Invalid args to <create>")
                     continue
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
+                s.connect((self.load_bal_Addr,self.load_bal_port))
                 padded_msg="CREATE"+delimiter+tokens[1]+delimiter+self.username        
-                s.send(padded_msg.encode('ascii'))                   #CREATE@group1@user1 -FORMAT SERVER 
+                s.send(padded_msg.encode('utf-8'))                   #CREATE@group1@user1 -FORMAT SERVER 
                 data = s.recv(1024).decode("utf-8")
                 if (data.split(delimiter)[0]=='1'):               #1@group_created@randomkey
                     print("Group Created! ")
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
-            else:
-                print("Invalid Command")
+            # else:
+            #     print("Invalid Command")
 
 
 def main():
@@ -185,12 +186,15 @@ def main():
     initial_thread = threading.Thread(target = thisUser.client_as_server, args=(client_IP, client_PORT))
 
     print("\nWelcome !!")
-    print("New User?   Signup <Name> <Roll no.> <Password>")
+    print("New User?   Sign up <Name> <Roll no.> <Password>")
     print("Already have an account?   Login <Name||Roll no.> <Password>\n")
     while True:
         org_msg=input(":")
         # padded_msg=appending_dollar(org_msg)+client_IP+"@"+client_PORT
         tokens=org_msg.split(' ')
+        # print(tokens)
+        if tokens[0] == '':
+            continue
         signup_check=tokens[0].lower()+" "+tokens[1].lower()
         if (signup_check=="sign up"):                        #SIGN UP U1 R1 P1  #Indx-0 1 2 3 4 #LEN-5
             if len(tokens) != 5:
@@ -218,7 +222,7 @@ def main():
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-            padded_msg = "SIGN"+delimiter"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
+            padded_msg = "SIGN"+delimiter+"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             if (data.split(delimiter)[0]=='1'):
