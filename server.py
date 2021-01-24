@@ -123,10 +123,10 @@ def parse_message(data, message):
     else:
         if IfExists("SIGN" + delimiter + "IN", message):
             password = message.split(delimiter)[3]
-            if not IsAccountExist(username):
+            if not IsAccountExist(data,username):
                 return '0' + delimiter + 'Username is incorrect'
             
-            if not IsPasswordExist(password):
+            if not IsPasswordExist(data,password):
                 return '0' + delimiter + 'Password is incorrect'
     
             ###Update query, change the signed in column status
@@ -151,13 +151,13 @@ def parse_message(data, message):
 
         elif( IfExists("SEND", message) and not IfExists("SEND_GROUP", message)):
             peer_name = message.split(delimiter)[3]
-            if not IsAccountExist(username):
+            if not IsAccountExist(data,username):
                 return '0' + delimiter + 'Make an account first'
             
-            if not IsSignedIn(username):
+            if not IsSignedIn(data,username):
                 return '0' + delimiter + 'You are not Signed in'
 
-            if not IsAccountExist(peer_name):
+            if not IsAccountExist(data,peer_name):
                 return '0' + delimiter + 'Peer which you are sending message to doesnt exist'
             
             #Get ip of peer
@@ -173,10 +173,10 @@ def parse_message(data, message):
             return '1' + delimiter + ip + delimiter + port
         
         elif IfExists("LIST", message):
-            if not IsAccountExist(username):
+            if not IsAccountExist(data,username):
                 return '0' + delimiter + 'Make an account first'
             
-            if not IsSignedIn(username):
+            if not IsSignedIn(data,username):
                 return '0' + delimiter + 'You are not Signed in'
 
             #get list of groups
@@ -197,13 +197,13 @@ def parse_message(data, message):
         
         elif IfExists("CREATE", message):
             group = message.split(delimiter)[1]
-            if not IsAccountExist(username):
+            if not IsAccountExist(data,username):
                 return '0' + delimiter + 'Make an account first'
             
-            if not IsSignedIn(username):
+            if not IsSignedIn(data,username):
                 return '0' + delimiter + 'You are not Signed in'
             
-            if IsGroupExist(group):
+            if IsGroupExist(data,group):
                 return '0' + delimiter + 'A group with this name already exists'
             
             #Update entry for user in the user table in PartofGroupsColumn
@@ -228,13 +228,13 @@ def parse_message(data, message):
 
         elif IfExists("JOIN", message):
             group = message.split(delimiter)[1]
-            if not IsAccountExist(username):
+            if not IsAccountExist(data,username):
                 return '0' + delimiter + 'Make an account first'
             
-            if not IsSignedIn(username):
+            if not IsSignedIn(data,username):
                 return '0' + delimiter + 'You are not Signed in'
             
-            if not IsGroupExist(group):
+            if not IsGroupExist(data,group):
                 message = message.replace("JOIN", "CREATE")
                 return parse_message(data, message)
             
@@ -347,6 +347,7 @@ class Server():
             message = c.recv(1024).decode('utf-8')
             print(message)
             response_message = parse_message(data,message)
+            print("respnse message")
             print(response_message)  
             c.send(response_message.encode("utf-8")) 
             print("Message sent ") 

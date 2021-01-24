@@ -195,9 +195,9 @@ def main():
                 print("Invalid args to <Login>")
                 continue            
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            print(s.getsockname()[1])
+            #print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-            padded_msg = "SIGN"+delimiter"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
+            padded_msg = "SIGN"+delimiter+"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             if (data.split(delimiter)[0]=='1'):
