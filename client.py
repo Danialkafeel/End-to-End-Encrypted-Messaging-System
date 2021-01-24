@@ -23,6 +23,9 @@ class User(object):
 
     def join_group(self,groupname,key):
         groupkeys[groupname] = key
+    def show_my_groups(self):
+        for groupname in self.groupkeys.keys():
+            print(groupname,":",self.groupkeys[groupname])
 
     def handle_request(self,connection):        ## DHK recv side
         data = connection.recv(1024)    ##  Assume this to be public key of sender
@@ -179,15 +182,19 @@ class User(object):
             elif (tokens[0].upper()=="JOIN"):                           #JOIN g1-FORMAT PDF
                 if len(tokens) != 2:
                     print("Invalid args to <join>")
-                    continue         
-
+                    continue
+                if tokens[1] in self.groupkeys.keys():
+                    print("You are already a member of the group")
+                    continue
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
                 padded_msg="JOIN"+delimiter+tokens[1]+delimiter+self.username                   
                 s.send(padded_msg.encode('utf-8'))          #JOIN@group1@user2 -FORMAT SERVER
                 data = s.recv(1024).decode("utf-8")         # 1@grp_key
                 if (data.split(delimiter)[0]=='1'):
-                    print(data.split(delimiter)[1])        # server returns key of that group
+                    print("Group Joined! ")
+                    # print(data.split(delimiter)[1])        # server returns key of that group
+                    self.groupkeys[tokens[1]] = data.split(delimiter)[1]
                 else:
                      print(data.split(delimiter)[1])
                 s.close()
@@ -196,6 +203,9 @@ class User(object):
                 if len(tokens) != 2:
                     print("Invalid args to <create>")
                     continue
+                if tokens[1] in self.groupkeys.keys():
+                    print("You are already a member of the group")
+                    continue      
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
                 padded_msg="CREATE"+delimiter+tokens[1]+delimiter+self.username        
@@ -203,9 +213,12 @@ class User(object):
                 data = s.recv(1024).decode("utf-8")
                 if (data.split(delimiter)[0]=='1'):               #1@group_created@randomkey
                     print("Group Created! ")
+                    self.groupkeys[tokens[1]] = data.split(delimiter)[2]
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
+            elif (tokens[0].upper() == "SHOW_GROUPS"):
+                self.show_my_groups()
             # else:
             #     print("Invalid Command")
 
@@ -269,7 +282,11 @@ def main():
             if (data.split(delimiter)[0]=='1'):
                 print("Successfully LOGGED IN!")
                 thisUser.set_username(tokens[1])
-                ####                Add grps name+keys on login
+                grps_info = data.split(delimiter)
+                if len(grps_info) > 2:
+                    for i in range(1,len(grps_info),2):
+                        thisUser.groupkeys[grps_info[i]] = grps_info[i+1]
+                thisUser.show_my_groups()
                 thisUser.interact_with_server()
                 break
             else:
