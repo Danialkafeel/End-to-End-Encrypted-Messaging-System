@@ -98,6 +98,8 @@ class User(object):
                     #---IMP! 
                 else:
                     print(data.split(delimiter)[1])
+                s.close()
+
             elif (tokens[0].lower()=="send_group"):              #send_group grpname msg  FORMAT by pdf/us.
                 if len(tokens) != 3:
                     print("Invalid args to <send_group>")
@@ -117,8 +119,14 @@ class User(object):
                     #---
                 else:
                     print(data.split(delimiter)[1])
-            
-            elif (tokens[0].upper()=="LIST"):                      #LIST
+                s.close()
+
+            elif (tokens[0].upper()=="LIST"):                            #LIST  FORMAT PDF
+                if len(tokens) != 1:
+                    print("Invalid args to <send>")
+                    continue
+                s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
                 padded_msg="LIST"+delimiter+"groups"+delimiter+self.username      #LIST@groups@user1- FORMAT SERVER
                 s.send(padded_msg.encode('ascii'))         
                 data = s.recv(1024).decode("utf-8")                 # 1@grpname@num_users@grpname@num
@@ -128,8 +136,14 @@ class User(object):
                         print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
                     print(data.split(delimiter)[1])
+                s.close()
             
-            elif (tokens[0].upper()=="JOIN"):
+            elif (tokens[0].upper()=="JOIN"):                           #JOIN g1-FORMAT PDF
+                if len(tokens) != 2:
+                    print("Invalid args to <send>")
+                    continue         
+                s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
                 padded_msg="JOIN"+delimiter+tokens[1]+delimiter+self.username                        
                 s.send(padded_msg.encode('ascii'))          #JOIN@group1@user2 -FORMAT SERVER
                 data = s.recv(1024).decode("utf-8")         # 1@grp_key
@@ -137,8 +151,14 @@ class User(object):
                     print(data.split(delimiter)[1])        # server returns key of that group
                 else:
                      print(data.split(delimiter)[1])
+                s.close()
             
-            elif (tokens[0].upper()=="CREATE"):
+            elif (tokens[0].upper()=="CREATE"):             #create g1 FORMAT PDF
+                if len(tokens) != 2:
+                    print("Invalid args to <send>")
+                    continue
+                s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
                 padded_msg="CREATE"+delimiter+tokens[1]+delimiter+self.username        
                 s.send(padded_msg.encode('ascii'))                   #CREATE@group1@user1 -FORMAT SERVER 
                 data = s.recv(1024).decode("utf-8")
@@ -146,6 +166,7 @@ class User(object):
                     print("Group Created! ")
                 else:
                     print(data.split(delimiter)[1])
+                s.close()
             else:
                 print("Invalid Command")
 
@@ -197,20 +218,21 @@ def main():
             s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #print(s.getsockname()[1])
             s.connect((thisUser.load_bal_Addr,thisUser.load_bal_port))
-            padded_msg = "SIGN"+delimiter+"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
+            padded_msg = "SIGN"+delimiter"IN"+delimiter+tokens[1]+delimiter+tokens[2]   #SIGN@IN@U1@P1
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8") 
             if (data.split(delimiter)[0]=='1'):
                 print("Successfully LOGGED IN!")
-                s.close()
                 thisUser.set_username(tokens[1])
                 ####                Add grps name+keys on login
                 thisUser.interact_with_server()
                 break
             else:
                 print(data.split(delimiter)[1])
+            s.close()
         else:
             print("Please signup/login first!")
+
 
 if __name__ == '__main__':
     main()
