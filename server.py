@@ -5,7 +5,7 @@ from threading import Lock
 
 database_path = "./MyDatabase.db"
 json_file_path = "./queries.json"
-path_to_store_files = "./"
+path_to_store_files = "../"
 delimiter = '@'
 MAX_NUM_THREADS = 3
 I_AM_BUSY = False
@@ -71,7 +71,7 @@ def execute_query(query):
     return query_result
 
 def send_group_message(data, message, group, members, index, max_number_threads):
-    message = '3'+delimiter+group+delimiter+message
+    message = '3' + delimiter + group + delimiter+ message
     while(index < len(members)):
         peer = members[index]
         #get ip of peer
@@ -98,7 +98,8 @@ def send_group_message(data, message, group, members, index, max_number_threads)
     
     return
 
-def send_group_file(data, filepath, members, index, max_number_threads):
+def send_group_file(data, group, filename, filepath, members, index, max_number_threads):
+    message = '4' + delimiter + filename + delimiter + group
     while(index < len(members)):
         peer = members[index]
         #get ip of peer
@@ -113,6 +114,7 @@ def send_group_file(data, filepath, members, index, max_number_threads):
         
         #Connect with client and send him the message
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.sendall(message)
         with open(filepath, 'rb') as fp:
             try:
                 s.connect( (ip ,int(port)) )
@@ -349,7 +351,8 @@ def parse_message(connection, data, message):
             
             return '1'
         
-        elif IfExists("SEND_GROUP", message) and not ifExists("DUMMY", message):
+        elif IfExists("SEND_GROUP_FILE", message):
+            #prin
             filename = message.split(delimiter)[1]
             
             #Store the file in your local directory
@@ -360,7 +363,11 @@ def parse_message(connection, data, message):
                     f.write(file_data)
                     file_data = connection.recv(2048)
             
-
+            #After writing the file, close the connection with the load balancer
+            connection.sendall('1')
+            connection.close()
+            
+            #Make new connection with clients now
             #Iterate through each group one by one and send files to the members
             for group_index in range(4, len(message.split(delimiter))):
                 group = message.split(delimiter)[group_index]
@@ -388,7 +395,7 @@ def parse_message(connection, data, message):
                 #Create threads and send the messages
                 index = 0
                 for _ in range(min(MAX_NUM_THREADS, num_members)):
-                    thread = threading.Thread(target = send_group_file, args = (data, filepath, members, index, MAX_NUM_THREADS,))
+                    thread = threading.Thread(target = send_group_file, args = (data, group, filename, filepath, members, index, MAX_NUM_THREADS,))
                     index += 1
                     thread.start()
                 
@@ -397,7 +404,7 @@ def parse_message(connection, data, message):
                 I_AM_BUSY = False
                 mutex.release()
             
-            return '1'
+            return
 
 
             
@@ -412,7 +419,7 @@ def init_db():
             schema = " VARCHAR (20) ,".join(ldata["tables"][table_name]["schema"])
             query_to_execute = query_to_execute.format(table_name, schema)
             #print(query_to_execute)
-            execute_query(query _to_execute)
+            execute_query(query_to_execute)
 
     else:
         print("Database File already exists")
@@ -443,19 +450,24 @@ class Server():
         self.s.listen(5)
         
         while True:  
-            # Establish connection with client.  
+            # Establish connection with loadbalancer.  
             connection, addr = self.s.accept()      
             print ('Got connection from', addr ) 
             message = connection.recv(1024).decode('utf-8')
-            print(message)
+            print("Request is ", message)
             response_message = parse_message(connection, data, message)
             # print("respnse message")
-            print("respnse ",response_message)  
-            connection.send(response_message.encode("utf-8")) 
-            # print("Message sent ") 
+            if response_message is not None:
+                print("respnse ",response_message)  
+                connection.send(response_message.encode("utf-8")) 
+                # print("Message sent ") 
 
-            # Close the connection with the client  
-            connection.close()
+                # Close the connection with the client 
+            try:
+                connection.close()
+            except Exception as e:
+                print(e)
+            
     
     def __del__(self):
         with open("ip.txt", "r") as f:

@@ -1,12 +1,12 @@
 import threading, socket, os
 import sys, hashlib
 from random import randrange
-import pyDes
 import base64
 from Crypto.Cipher import DES3
 
-delimiter="@"
-file_path='/home/mxs/Desktop/SNS/'
+delimiter = "@"
+path_to_store_files = '../Client_path' 
+
 class User(object):
     def __init__(self, load_port):
         self.load_bal_Addr= "127.0.0.1"
@@ -22,7 +22,7 @@ class User(object):
         self.username = usern
 
     def join_group(self,groupname,key):
-        groupkeys[groupname] = key
+        self.groupkeys[groupname] = key
     def show_my_groups(self):
         for groupname in self.groupkeys.keys():
             print(groupname,":",self.groupkeys[groupname])
@@ -67,6 +67,18 @@ class User(object):
             #decyrpted_msg = cipher.decrypt(data.split(delimiter)[2])
             print("MSG: ",data.split(delimiter)[2])
             #data = connection.recv(1024)
+        
+        #Group files
+        elif data.split(delimiter[0] == '4'):
+            filename = data.split(delimiter)[1]
+            group = data.split(delimiter)[2]
+            filepath = path_to_store_files + filename
+            bytes_to_read = 1024
+            with open(filepath, 'wb') as f:
+                file_data = f.recv(bytes_to_read)
+                while file_data:
+                    f.write(file_data)
+                    file_data = f.recv(bytes_to_read)
 
 
         # message = message.split(' ')[1]
@@ -215,10 +227,13 @@ class User(object):
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
                 grp_str = delimiter.join(groups)
-                padded_msg = "SEND_GROUP"+delimiter+tokens[1]+delimiter+self.username+delimiter+grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
-                s.send(padded_msg.encode('utf-8'))
+                print("grp_str is ", grp_str)
+                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter+ self.username+ delimiter+ grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
+                s.sendall(padded_msg.encode('utf-8'))
+                print(padded_msg)
                 
-                with open(file_path+tokens[1],'rb') as f:
+                filepath = './'
+                with open(filepath + tokens[1],'rb') as f:
                     bytes_to_read = 1024
                     file_data=f.read(bytes_to_read)
                     while file_data:
