@@ -32,6 +32,7 @@ class loadbalancer():
     
         # data received from client 
         data = c.recv(1024)
+        # data_decoded = data.decode()
         print("data recv", data) 
         if data is None:
             c.close()

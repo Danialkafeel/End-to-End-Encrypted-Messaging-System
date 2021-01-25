@@ -6,7 +6,7 @@ import base64
 from Crypto.Cipher import DES3
 
 delimiter="@"
-file_path='/home/mxs/Desktop/SNS/'
+file_path='/home/danial/'
 class User(object):
     def __init__(self, load_port):
         self.load_bal_Addr= "127.0.0.1"
@@ -68,6 +68,7 @@ class User(object):
             print("MSG: ",data.split(delimiter)[2])
             #data = connection.recv(1024)
 
+        elif data.split(delimiter)[0] == '4':       # received file from server (grp)    4$file_name$group_name
 
         # message = message.split(' ')[1]
         # filepath = '.' + '/' + message
@@ -129,7 +130,7 @@ class User(object):
         print("\nAvailable Commands")
         print("Send <Name||Roll no.> <message>")    # 4 ways
         print("Send_group <No. of groups> <Group no.(s)> <message>")    # 4 ways    send_group 2 g1 g2 this is my g2 dsjfkdlsajfkl
-        print("Send_group_File <File_Name>  <No. of groups> <Group no.(s)> <message>")
+        print("Send_group_File <File_Name>  <No. of groups> <Group no.(s)>")
         print("List")
         print("Create <Group name>")
         print("Join <Group name>\n")
@@ -215,7 +216,7 @@ class User(object):
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
                 grp_str = delimiter.join(groups)
-                padded_msg = "SEND_GROUP"+delimiter+tokens[1]+delimiter+self.username+delimiter+grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
+                padded_msg = "send_group_file"+delimiter+tokens[1]+delimiter+self.username+delimiter+grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
                 s.send(padded_msg.encode('utf-8'))
                 
                 with open(file_path+tokens[1],'rb') as f:

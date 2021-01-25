@@ -350,7 +350,7 @@ def parse_message(connection, data, message):
             
             return '1'
         
-        elif IfExists("SEND_GROUP", message) and not ifExists("DUMMY", message):
+        elif IfExists("SEND_GROUP", message) and not IfExists("DUMMY", message):
             filename = message.split(delimiter)[1]
             
             #Store the file in your local directory
