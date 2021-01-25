@@ -9,7 +9,6 @@ path_to_store_files = "./"
 delimiter = '@'
 MAX_NUM_THREADS = 3
 I_AM_BUSY = False
-data =None
 
 def generate_random_key():
     value = random.randint(10000000, 1000000000)
@@ -116,12 +115,12 @@ def send_group_file(data, filepath, members, index, max_number_threads):
         with open(filepath, 'rb') as fp:
             try:
                 s.connect( (ip ,int(port)) )
-                offset = 0
+                #offset = 0
                 bytes_to_read = 1024
                 file_data = fp.read(bytes_to_read)
                 while file_data:
                     s.sendall(file_data)
-                    offset += bytes_to_read
+                    #offset += bytes_to_read
                     file_data = fp.read(bytes_to_read)
             
             except Exception as e:
@@ -412,7 +411,7 @@ def init_db():
             schema = " VARCHAR (20) ,".join(ldata["tables"][table_name]["schema"])
             query_to_execute = query_to_execute.format(table_name, schema)
             #print(query_to_execute)
-            execute_query(query_to_execute)
+            execute_query(query _to_execute)
 
     else:
         print("Database File already exists")

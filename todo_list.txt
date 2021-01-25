@@ -12,3 +12,6 @@ code in the try catch block, in any case TA has said that we can assume that rec
 
 7. In send messages/files to the group functionality, check whether the user is part of that group and 
 and send only those group names
+
+Differentiate between different types of messages
+Test sending group messages and files
