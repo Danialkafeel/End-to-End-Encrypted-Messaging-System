@@ -279,7 +279,7 @@ def parse_message(connection, data, message):
             
             if not IsGroupExist(data,group):
                 message = message.replace("JOIN", "CREATE")
-                return parse_message(data, message)
+                return parse_message(connection, data, message)
             
             #Update entry for user in the user table in PartofGroupsColumn
             query_to_execute = data['queries']['get_column_conditional_query'].format("PartofGroups", "User", "Username = {}".format(add_quotes(username)) )
