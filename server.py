@@ -12,7 +12,7 @@ I_AM_BUSY = False
 data =None
 
 def generate_random_key():
-    value = random.randint(10000000, 1000000000)
+    value = random.randint(100000000000000000000000, 999999999999999999999999)
     return str(value)
 
 def add_quotes(string):
@@ -71,7 +71,8 @@ def execute_query(query):
 
     return query_result
 
-def send_group_message(data, message, members, index, max_number_threads):
+def send_group_message(data, message, group, members, index, max_number_threads):
+    message = '3'+delimiter+group+delimiter+message
     while(index < len(members)):
         peer = members[index]
         #get ip of peer
@@ -82,7 +83,7 @@ def send_group_message(data, message, members, index, max_number_threads):
         #get port of peer
         query_to_execute = data['queries']['get_column_conditional_query'].format("port", "User", "Username = {}".format(add_quotes(peer)))
         port = execute_query(query_to_execute)
-        port = ip[0][0]
+        port = port[0][0]
         
         #Connect with client and send him the message
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -338,7 +339,7 @@ def parse_message(connection, data, message):
                 #Create threads and send the messages
                 index = 0
                 for _ in range(min(MAX_NUM_THREADS, num_members)):
-                    thread = threading.Thread(target = send_group_message, args = (data, message_to_send, members, index, MAX_NUM_THREADS,))
+                    thread = threading.Thread(target = send_group_message, args = (data, message_to_send, group, members, index, MAX_NUM_THREADS,))
                     index += 1
                     thread.start()
                 
@@ -449,10 +450,10 @@ class Server():
             message = connection.recv(1024).decode('utf-8')
             print(message)
             response_message = parse_message(connection, data, message)
-            print("respnse message")
-            print(response_message)  
+            # print("respnse message")
+            print("respnse ",response_message)  
             connection.send(response_message.encode("utf-8")) 
-            print("Message sent ") 
+            # print("Message sent ") 
 
             # Close the connection with the client  
             connection.close()
