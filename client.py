@@ -6,7 +6,7 @@ import base64
 from Crypto.Cipher import DES3
 
 delimiter="@"
-
+file_path='/home/mxs/Desktop/SNS/'
 class User(object):
     def __init__(self, load_port):
         self.load_bal_Addr= "127.0.0.1"
@@ -27,26 +27,47 @@ class User(object):
         for groupname in self.groupkeys.keys():
             print(groupname,":",self.groupkeys[groupname])
 
-    def handle_request(self,connection):        ## DHK recv side
-        data = connection.recv(1024)    ##  Assume this to be public key of sender
-        #print("public_key of sender = ",data)
-        user = str(randrange(1000)) + str(self.username)
-        private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
-        public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-        #print("my public_key = ",public_key)
-        connection.send(str(public_key).encode('utf-8'))
-        shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
-        #print("shared_key found ",shared_key)
-        array2 = bytearray(str(shared_key), 'utf-16')
-        #print(array2," ",type(array2)," ",len(array2))
-        new_size=array2[-24:]
-        #print(new_size," ",type(new_size)," ",len(new_size))
-        cipher = DES3.new(new_size, DES3.MODE_CFB)
-        data=connection.recv(1024)
-        #print("Encypted data: ",data)
-        decyrpted_msg=cipher.decrypt(data)
-        print("Msg: ",decyrpted_msg.decode('utf-16')[4:])
+
+    # def encrypt_msg(key,msg):
+    #     print(final_key)
+    #     new_key= bytearray(str(key), 'utf-16')
+    #     fina_key=new_key[-24:]
+    #     print("OG ",msg)
+    #     cipher = DES3.new(new_size, DES3.MODE_CFB)
+    #     a=cipher.encrypt(msg.encode())
+    #     #print("Encypted", type(a))
+    #     s.send(cipher.encrypt(msg.encode('utf-16')))
         
+
+    def handle_request(self,connection):        ## DHK recv side
+        data = connection.recv(1024).decode('utf-8')    ##  Assume this to be public key of Sender  2$public_key(peer)
+        if data.split(delimiter)[0] == '2':
+            data = data.split(delimiter)[1]
+            #print("public_key of sender = ",data)
+            user = str(randrange(1000)) + str(self.username)
+            private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
+            public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+            #print("my public_key = ",public_key)
+            connection.send(str(public_key).encode('utf-8'))
+            shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
+            #print("shared_key found ",shared_key)
+            array2 = bytearray(str(shared_key), 'utf-16')
+            #print(array2," ",type(array2)," ",len(array2))
+            new_size=array2[-24:]
+            #print(new_size," ",type(new_size)," ",len(new_size))
+            cipher = DES3.new(new_size, DES3.MODE_CFB)
+            data=connection.recv(1024)
+            #print("Encypted data: ",data)
+            decyrpted_msg=cipher.decrypt(data)
+            print("Msg: ",decyrpted_msg.decode('utf-16')[4:])
+
+        elif data.split(delimiter)[0] == '3':       # received from server (grp)    3$group_name$msg_from_group
+            sender_grp_name = data.split(delimiter)[1]
+            #cipher = DES3.new(self.groupkeys[sender_grp_name], DES3.MODE_CFB)
+            #decyrpted_msg = cipher.decrypt(data.split(delimiter)[2])
+            print("MSG: ",data.split(delimiter)[2])
+            #data = connection.recv(1024)
+
 
         # message = message.split(' ')[1]
         # filepath = '.' + '/' + message
@@ -86,8 +107,9 @@ class User(object):
         user = str(randrange(1000)) + str(self.username)                  #   Implement DHK sender side here!
         private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
         public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+        public_key = '2'+delimiter+str(public_key)
         #print("my public_key = ",public_key)
-        s.send(str(public_key).encode('utf-8'))
+        s.send(public_key.encode('utf-8'))
         data = s.recv(1024).decode("utf-8")
         #print("public_key received = ",data)
 
@@ -98,7 +120,6 @@ class User(object):
 
         print("OG ",msg)
         cipher = DES3.new(new_size, DES3.MODE_CFB)
-        msg="GAR"+msg
         a=cipher.encrypt(msg.encode())
         #print("Encypted", type(a))
         s.send(cipher.encrypt(msg.encode('utf-16')))
@@ -108,6 +129,7 @@ class User(object):
         print("\nAvailable Commands")
         print("Send <Name||Roll no.> <message>")    # 4 ways
         print("Send_group <No. of groups> <Group no.(s)> <message>")    # 4 ways    send_group 2 g1 g2 this is my g2 dsjfkdlsajfkl
+        print("Send_group_File <File_Name>  <No. of groups> <Group no.(s)> <message>")
         print("List")
         print("Create <Group name>")
         print("Join <Group name>\n")
@@ -134,11 +156,13 @@ class User(object):
                     msg=""
                     for i in range(2,len(tokens)):
                         msg=msg+tokens[i]+" "
+                    #msg="GAR"+msg
                     thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,msg)) 
                     thread.start()
                 else:
                     print(data.split(delimiter)[1])
 
+            ##SEND-GROUP 
             elif (tokens[0].lower()=="send_group"):              #send_group no_of_grps grpname(s) msg 
                 if len(tokens) < 4:
                     print("Invalid args to <send_group>")
@@ -153,7 +177,7 @@ class User(object):
                         groups.append(tokens[i+2])
                     else:
                         print("You are not a part of ",tokens[i+2],"group")
-                msg = tokens[no_of_grps+2]
+                msg = "GAR"+tokens[no_of_grps+2]
                 if not groups:
                     print("Message not sent! Not a member of any of the groups")
                     continue
@@ -165,6 +189,46 @@ class User(object):
                 data = s.recv(1024).decode("utf-8") 
                 if (data.split(delimiter)[0]=='1'):
                     print("Message Sent!")
+                else:
+                    print(data.split(delimiter)[1])
+                s.close()
+
+            ##SEND-GROUP FILE
+            elif (tokens[0].lower()=="send_group_file"):     #CLIENT- send_group_file abc.txt 2 g1 g2
+                if len(tokens) < 4:
+                    print("Invalid args to <send_group>")
+                    continue
+                #no_of_grps=None
+                try:
+                    no_of_grps = int(tokens[2])
+                except:
+                    print("No. of groups must be an integer")
+                groups = []
+                for i in range(no_of_grps):
+                    if tokens[i+3] in self.groupkeys.keys():
+                        groups.append(tokens[i+3])
+                    else:
+                        print("You are not a part of ",tokens[i+3],"group")
+                if not groups:
+                    print("Message not sent! Not a member of any of the groups")
+                    continue
+                s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((self.load_bal_Addr,self.load_bal_port))
+                grp_str = delimiter.join(groups)
+                padded_msg = "SEND_GROUP"+delimiter+tokens[1]+delimiter+self.username+delimiter+grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
+                s.send(padded_msg.encode('utf-8'))
+                
+                with open(file_path+tokens[1],'rb') as f:
+                    bytes_to_read = 1024
+                    file_data=f.read(bytes_to_read)
+                    while file_data:
+                        s.sendall(file_data)
+                        file_data=f.read(bytes_to_read)
+
+
+                data = s.recv(1024).decode("utf-8")
+                if (data.split(delimiter)[0]=='1'):
+                    print("File Received!")
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
