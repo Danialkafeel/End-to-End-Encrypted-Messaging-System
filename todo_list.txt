@@ -1,4 +1,3 @@
-5.	username without rollno. is considered same on server( is this a problem still?)		,		(Is this a problem still ?)username without rollno. with correct password ==> server crashes.
 
 4.  after login, port is not being updated in the DB. // done
 
@@ -7,7 +6,7 @@
 2.	Always take SHA256 of the group key received.
 
 3.	Return if the receiver is logged in or not. // This should be handled from the client side, You put your socket connection
-code in the try catch block, in any case TA has said that we can assume that receiver is always online
+code in the try catch block, in any case TA has said that we can assume that receiver is always online.	Okay :)
 
 6.	password fixing. // done
 

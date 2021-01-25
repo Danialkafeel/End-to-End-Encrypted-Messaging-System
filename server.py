@@ -30,9 +30,9 @@ def IsAccountExist(data, username):
     # return IfExists(username, usernames)
 
 def IsPasswordExist(data, username, password):
-    query_to_execute = data['queries']['get_column_conditional_query'].format("password", "User", "User = {}".format(add_quotes(username)))
+    query_to_execute = data['queries']['get_column_conditional_query'].format("password", "User", "Username = {}".format(add_quotes(username)))
     password_fetched = execute_query(query_to_execute)
-    password_fectched = password_fetched[0][0]
+    password_fetched = password_fetched[0][0]
     return password == password_fetched
     # return IfExists(password, passwords)
 
