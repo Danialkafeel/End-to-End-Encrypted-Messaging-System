@@ -28,44 +28,39 @@ class User(object):
             print(groupname,":",self.groupkeys[groupname])
 
 
-    # def encrypt_msg(key,msg):
-    #     print(final_key)
-    #     new_key= bytearray(str(key), 'utf-16')
-    #     fina_key=new_key[-24:]
-    #     print("OG ",msg)
-    #     cipher = DES3.new(new_size, DES3.MODE_CFB)
-    #     a=cipher.encrypt(msg.encode())
-    #     #print("Encypted", type(a))
-    #     s.send(cipher.encrypt(msg.encode('utf-16')))
-        
+    def encrypt_msg(self,key,msg):                                  
+        final_key= (bytearray(str(key), 'utf-16'))[-24:]
+        msg="GAR"+msg                                           #Adding 3 GARBAGE characters
+        cipher = DES3.new(final_key, DES3.MODE_CFB)
+        return cipher.encrypt(msg.encode('utf-16'))
+    
+    def decrypt_msg(self,key,msg):
+        final_key= (bytearray(str(key), 'utf-16'))[-24:]
+        cipher = DES3.new(final_key, DES3.MODE_CFB)
+        return cipher.decrypt(msg)                           #Remove first 4 characters while decoding it.
 
-    def handle_request(self,connection):        ## DHK recv side
-        data = connection.recv(1024).decode('utf-8')    ##  Assume this to be public key of Sender  2$public_key(peer)
+
+
+    def handle_request(self,connection):                     ## DHK recv side
+        data = connection.recv(1024).decode('utf-8')         ##  Assume this to be public key of Sender  2$public_key(peer)
         if data.split(delimiter)[0] == '2':
-            data = data.split(delimiter)[1]
-            #print("public_key of sender = ",data)
+            data = data.split(delimiter)[1]                 #Public key client
             user = str(randrange(1000)) + str(self.username)
             private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
             public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-            #print("my public_key = ",public_key)
-            connection.send(str(public_key).encode('utf-8'))
+
+            connection.send(str(public_key).encode('utf-8'))        #Sending my public key
             shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
-            #print("shared_key found ",shared_key)
-            array2 = bytearray(str(shared_key), 'utf-16')
-            #print(array2," ",type(array2)," ",len(array2))
-            new_size=array2[-24:]
-            #print(new_size," ",type(new_size)," ",len(new_size))
-            cipher = DES3.new(new_size, DES3.MODE_CFB)
+           
             data=connection.recv(1024)
-            #print("Encypted data: ",data)
-            decyrpted_msg=cipher.decrypt(data)
+            decyrpted_msg=self.decrypt_msg(shared_key,data)
             print("Msg: ",decyrpted_msg.decode('utf-16')[4:])
 
         elif data.split(delimiter)[0] == '3':       # received from server (grp)    3$group_name$msg_from_group
             sender_grp_name = data.split(delimiter)[1]
             #cipher = DES3.new(self.groupkeys[sender_grp_name], DES3.MODE_CFB)
             #decyrpted_msg = cipher.decrypt(data.split(delimiter)[2])
-            print("MSG: ",data.split(delimiter)[2])
+            print("Msg: ",data.split(delimiter)[2])
             #data = connection.recv(1024)
 
 
@@ -100,29 +95,22 @@ class User(object):
             thread_list.append(thread)
             thread.start()
 
-    def client_connection_with_other_client(self,ip,port, msg):     ## Sender of msg
+    def client_connection_with_other_client(self,ip,port, msg):           ## Sender of msg
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("ip, port = ",ip,port)
         s.connect((ip,int(port)))
         user = str(randrange(1000)) + str(self.username)                  #   Implement DHK sender side here!
-        private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
-        public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-        public_key = '2'+delimiter+str(public_key)
-        #print("my public_key = ",public_key)
-        s.send(public_key.encode('utf-8'))
-        data = s.recv(1024).decode("utf-8")
-        #print("public_key received = ",data)
+        private_key = hashlib.sha256(user.encode())                       # 32 Bytes no.
+        public_key_client= pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+        public_key_client = '2'+delimiter+str(public_key_client)
+        s.send(public_key_client.encode('utf-8'))                          #Sending my public key
 
-        shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)
-       
-        array2 = bytearray(str(shared_key), 'utf-16')
-        new_size=array2[-24:]
+        public_key_recvr = s.recv(1024).decode("utf-8")
 
-        print("OG ",msg)
-        cipher = DES3.new(new_size, DES3.MODE_CFB)
-        a=cipher.encrypt(msg.encode())
-        #print("Encypted", type(a))
-        s.send(cipher.encrypt(msg.encode('utf-16')))
+        shared_key = pow(int(public_key_recvr),int(private_key.hexdigest(),16),self.q)
+
+        encyrpted_msg=self.encrypt_msg(shared_key,msg)
+        s.send(encyrpted_msg)
         s.close()
 
     def interact_with_server(self):
