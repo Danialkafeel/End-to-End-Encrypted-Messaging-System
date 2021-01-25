@@ -308,11 +308,11 @@ def parse_message(connection, data, message):
             
             return '1' + delimiter + randomkey
 
-        elif IfExists("SEND_GROUP", message) and ifExists("DUMMY", message):       #   SEND_GROUP$DUMMY$USERNAME$message$G1$G2$G3
+        elif IfExists("SEND_GROUP", message) and IfExists("DUMMY", message):       #   SEND_GROUP$DUMMY$USERNAME$message$G1$G2$G3
             message_to_send = message.split(delimiter)[3]
 
             #Iterate through each group one by one and send messages to the members
-            for group_index,_ in range(4, len(message.split(delimiter))):
+            for group_index in range(4, len(message.split(delimiter))):
                 group = message.split(delimiter)[group_index]
             
                 #get all the members in the group
@@ -362,7 +362,7 @@ def parse_message(connection, data, message):
             
 
             #Iterate through each group one by one and send files to the members
-            for group_index,_ in range(4, len(message.split(delimiter))):
+            for group_index in range(4, len(message.split(delimiter))):
                 group = message.split(delimiter)[group_index]
             
                 #get all the members in the group
