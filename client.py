@@ -29,23 +29,24 @@ class User(object):
 
     def handle_request(self,connection):        ## DHK recv side
         data = connection.recv(1024)    ##  Assume this to be public key of sender
-        print("public_key of sender = ",data)
+        #print("public_key of sender = ",data)
         user = str(randrange(1000)) + str(self.username)
         private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
         public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-        print("my public_key = ",public_key)
+        #print("my public_key = ",public_key)
         connection.send(str(public_key).encode('utf-8'))
         shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
         #print("shared_key found ",shared_key)
         array2 = bytearray(str(shared_key), 'utf-16')
         #print(array2," ",type(array2)," ",len(array2))
         new_size=array2[-24:]
-        print(new_size," ",type(new_size)," ",len(new_size))
+        #print(new_size," ",type(new_size)," ",len(new_size))
         cipher = DES3.new(new_size, DES3.MODE_CFB)
         data=connection.recv(1024)
-        print("Encypted data: ",data)
-        print("Decypted Data: ",cipher.decrypt(data))
-        #k = pyDes.triple_des(base64.b64decode(str(shared_key)), mode= pyDes.CBC, padmode= pyDes.PAD_PKCS5)
+        #print("Encypted data: ",data)
+        decyrpted_msg=cipher.decrypt(data)
+        print("Msg: ",decyrpted_msg.decode('utf-16')[4:])
+        
 
         # message = message.split(' ')[1]
         # filepath = '.' + '/' + message
@@ -82,30 +83,24 @@ class User(object):
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("ip, port = ",ip,port)
         s.connect((ip,int(port)))
-        # print(s.getsockname()[1])
         user = str(randrange(1000)) + str(self.username)                  #   Implement DHK sender side here!
         private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
         public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-        print("my public_key = ",public_key)
+        #print("my public_key = ",public_key)
         s.send(str(public_key).encode('utf-8'))
         data = s.recv(1024).decode("utf-8")
-        print("public_key received = ",data)
+        #print("public_key received = ",data)
 
         shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)
-        #print("shared_key found ",shared_key)
-        #print(len(str(shared_key)))
+       
         array2 = bytearray(str(shared_key), 'utf-16')
-        #print(array2," ",type(array2)," ",len(array2))
         new_size=array2[-24:]
-        print(new_size," ",type(new_size)," ",len(new_size))
+
         cipher = DES3.new(new_size, DES3.MODE_CFB)
-        print(cipher)
-        #k = pyDes.triple_des(base64.b64decode(str(new_size)),mode = pyDes.CBC, padmode=pyDes.PAD_PKCS5)
-        #print(k.getKey())
+        msg="GAR"+msg
         a=cipher.encrypt(msg.encode())
-        print("Encypted", type(a))
-        print("Dec ",cipher.decrypt(a))
-        s.send(cipher.encrypt(msg.encode()))
+        #print("Encypted", type(a))
+        s.send(cipher.encrypt(msg.encode('utf-16')))
         s.close()
 
     def interact_with_server(self):
