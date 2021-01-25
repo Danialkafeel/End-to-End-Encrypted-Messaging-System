@@ -156,7 +156,7 @@ def parse_message(connection, data, message):
         if IfExists("SIGN" + delimiter + "IN", message):
             password = message.split(delimiter)[3]
             ip = message.split(delimiter)[4]
-            port = message.split(delimiter)[4]
+            port = message.split(delimiter)[5]
             if not IsAccountExist(data,username):
                 return '0' + delimiter + 'Username is incorrect'
             

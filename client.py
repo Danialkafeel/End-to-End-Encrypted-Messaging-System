@@ -96,6 +96,7 @@ class User(object):
         array2 = bytearray(str(shared_key), 'utf-16')
         new_size=array2[-24:]
 
+        print("OG ",msg)
         cipher = DES3.new(new_size, DES3.MODE_CFB)
         msg="GAR"+msg
         a=cipher.encrypt(msg.encode())
@@ -130,7 +131,10 @@ class User(object):
                 if (data.split(delimiter)[0]=='1'):
                     recv_ip=data.split(delimiter)[1]
                     recv_port=data.split(delimiter)[2]
-                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[2])) 
+                    msg=""
+                    for i in range(2,len(tokens)):
+                        msg=msg+tokens[i]+" "
+                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,msg)) 
                     thread.start()
                     #---IMP! 
                 else:
