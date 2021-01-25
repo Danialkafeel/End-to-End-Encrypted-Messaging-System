@@ -279,7 +279,7 @@ def parse_message(connection, data, message):
             
             if not IsGroupExist(data,group):
                 message = message.replace("JOIN", "CREATE")
-                return parse_message(data, message)
+                return parse_message(connection, data, message)
             
             #Update entry for user in the user table in PartofGroupsColumn
             query_to_execute = data['queries']['get_column_conditional_query'].format("PartofGroups", "User", "Username = {}".format(add_quotes(username)) )
@@ -422,8 +422,8 @@ def init_db():
 
 
 class Server():
-    s=None
-    port=None
+    s = None
+    port = None
 
     def __init__(self, port):
         
@@ -444,18 +444,18 @@ class Server():
         
         while True:  
             # Establish connection with client.  
-            c, addr = self.s.accept()      
+            connection, addr = self.s.accept()      
             print ('Got connection from', addr ) 
-            message = c.recv(1024).decode('utf-8')
+            message = connection.recv(1024).decode('utf-8')
             print(message)
-            response_message = parse_message(c, data, message)
+            response_message = parse_message(connection, data, message)
             print("respnse message")
             print(response_message)  
-            c.send(response_message.encode("utf-8")) 
+            connection.send(response_message.encode("utf-8")) 
             print("Message sent ") 
 
             # Close the connection with the client  
-            c.close()
+            connection.close()
     
     def __del__(self):
         with open("ip.txt", "r") as f:

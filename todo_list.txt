@@ -1,7 +1,7 @@
 
 4.  after login, port is not being updated in the DB. // done
 
-1.	Client not allowed to join/create the same grp again
+1.	Client not allowed to join/create the same grp again	// Completed.
 
 2.	Always take SHA256 of the group key received.
 
