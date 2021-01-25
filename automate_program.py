@@ -1,12 +1,21 @@
-path =  "python3 ~/server_side.py"
-path2 = "~/server_side.py"
-# print(path)
-
-path3= "'/home/jarves/NewFolder/IIITH Classes/Second Semester/System and Network Security/Assignment1/End-to-end-messaging-system/server_side.py'"
-
-
-import subprocess, os
+import subprocess, os, sys
 from subprocess import Popen, PIPE, call
 
-for i in range(3):
-    status = subprocess.call("gnome-terminal -- python3 " + path3, shell=True)
+server_path = "./server.py"
+client_path = "./clent.py"
+
+number_of_servers = None
+number_of_clients = None
+
+if len(sys.argv) < 2:
+    number_of_servers = 3
+else:
+    number_of_servers = int(sys.argv[1])
+
+
+for i in range(number_of_servers):
+    status = subprocess.call("gnome-terminal -- python3 " + server_path, shell=True)
+
+
+# for i in range(number_of_clients):
+#      status = subprocess.call("gnome-terminal -- python3 " + client_path, shell=True)
