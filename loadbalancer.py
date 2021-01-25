@@ -7,8 +7,8 @@ print_lock = threading.Lock()
 
 class loadbalancer():
     modulus=0
-    noofservers=3
-    message =""
+    noofservers = 3
+    message = ""
     semaphore = 1
 
     def __init__(self, port):
@@ -32,7 +32,7 @@ class loadbalancer():
     
         # data received from client 
         data = c.recv(1024)
-        print("data recv",data) 
+        print("data recv", data) 
         if data is None:
             c.close()
             return
