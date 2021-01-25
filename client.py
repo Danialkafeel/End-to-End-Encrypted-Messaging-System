@@ -137,27 +137,35 @@ class User(object):
                     recv_port=data.split(delimiter)[2]
                     thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[2])) 
                     thread.start()
-                    #---IMP! 
                 else:
                     print(data.split(delimiter)[1])
 
-            elif (tokens[0].lower()=="send_group"):              #send_group grpname msg  FORMAT by pdf/us.
-                if len(tokens) != 3:
+            elif (tokens[0].lower()=="send_group"):              #send_group no_of_grps grpname(s) msg 
+                if len(tokens) < 4:
                     print("Invalid args to <send_group>")
+                    continue
+                try:
+                    no_of_grps = int(tokens[1])
+                except:
+                    print("No. of groups must be an integer")
+                groups = []
+                for i in range(no_of_grps):
+                    if tokens[i+2] in self.groupkeys.keys():
+                        groups.append(tokens[i+2])
+                    else:
+                        print("You are not a part of ",tokens[i+2],"group")
+                msg = tokens[no_of_grps+2]
+                if not groups:
+                    print("Message not sent! Not a member of any of the groups")
                     continue
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
-                #SEND_GROUP@group1@user1@msg FORMAT by server
-                padded_msg = "SEND_GROUP"+delimiter+tokens[1]+delimiter+self.username+delimiter+tokens[2]          
+                grp_str = delimiter.join(groups)
+                padded_msg = "SEND_GROUP"+delimiter+"DUMMY"+delimiter+self.username+delimiter+msg+delimiter+grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
                 s.send(padded_msg.encode('utf-8'))
-                data = s.recv(1024).decode("utf-8")    
+                data = s.recv(1024).decode("utf-8") 
                 if (data.split(delimiter)[0]=='1'):
-                    recv_ip=data.split(delimiter)[1]
-                    recv_port=data.split(delimiter)[2]
-                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[2])) 
-                    thread_list.append(thread)
-                    thread.start()
-                    #---
+                    print("Message Sent!")
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
