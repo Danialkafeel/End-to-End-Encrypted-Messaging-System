@@ -5,7 +5,7 @@ import base64
 from Crypto.Cipher import DES3
 
 delimiter = "@"
-path_to_store_files = '../Client_path' 
+path_to_store_files = '../Client_path/' 
 
 class User(object):
     def __init__(self, load_port):
@@ -28,7 +28,7 @@ class User(object):
             print(groupname,":",self.groupkeys[groupname])
 
 
-    def encrypt_msg(self,key,msg):                                  
+    def encrypt_msg(self,key,msg):                               
         final_key= (bytearray(str(key), 'utf-16'))[-24:]
         msg="GAR"+msg                                           #Adding 3 GARBAGE characters
         cipher = DES3.new(final_key, DES3.MODE_CFB)
@@ -38,15 +38,19 @@ class User(object):
         final_key= (bytearray(str(key), 'utf-16'))[-24:]
         cipher = DES3.new(final_key, DES3.MODE_CFB)
         return cipher.decrypt(msg)                           #Remove first 4 characters while decoding it.
-
+        
+    def encrypt_file(self,key,msg):
+        final_key= (bytearray(str(key), 'utf-16'))[-24:]
+        cipher = DES3.new(final_key, DES3.MODE_CFB)
+        return cipher.encrypt(msg)
 
 
     def handle_request(self,connection):                     ## DHK recv side
         data = connection.recv(1024).decode('utf-8')         ##  Assume this to be public key of Sender  2$public_key(peer)
         if data.split(delimiter)[0] == '2':
-            data = data.split(delimiter)[1]                 #Public key client
+            data = data.split(delimiter)[1]                     #Public key client
             user = str(randrange(1000)) + str(self.username)
-            private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
+            private_key = hashlib.sha256(user.encode())     
             public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
 
             connection.send(str(public_key).encode('utf-8'))        #Sending my public key
@@ -55,11 +59,35 @@ class User(object):
             data=connection.recv(1024)
             decyrpted_msg=self.decrypt_msg(shared_key,data)
             print("Msg: ",decyrpted_msg.decode('utf-16')[4:])
+        
+        elif data.split(delimiter)[0] == '4':
+            data = data.split(delimiter)[1]
+            user = str(randrange(1000)) + str(self.username)
+            private_key = hashlib.sha256(user.encode())     
+            public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
 
-        elif data.split(delimiter)[0] == '3':       # received from server (grp)    3$group_name$msg_from_group
+            connection.send(str(public_key).encode('utf-8'))        
+            shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)  
+            
+            filename=connection.recv(1024).decode('utf-8')
+            filename="Received_"+filename
+            print("New file name: ",filename)
+            c=1
+            f=open(filename, 'ab+')
+            bytes_read = connection.recv(40960000)
+            print(len(bytes_read)," ",c)
+            while bytes_read:
+                decyrpted_msg=self.decrypt_msg(shared_key,bytes_read)
+                f.write(decyrpted_msg)
+                c+=1
+                bytes_read = connection.recv(40960000)
+                print(len(bytes_read)," ",c)
+            
+            f.close()
+
+
+        elif data.split(delimiter)[0] == '3':               # received from server (grp)    3$group_name$msg_from_group
             sender_grp_name = data.split(delimiter)[1]
-            #cipher = DES3.new(self.groupkeys[sender_grp_name], DES3.MODE_CFB)
-            #decyrpted_msg = cipher.decrypt(data.split(delimiter)[2])
             print("Msg: ",data.split(delimiter)[2])
             #data = connection.recv(1024)
         
@@ -93,27 +121,45 @@ class User(object):
             thread_list.append(thread)
             thread.start()
 
-    def client_connection_with_other_client(self,ip,port, msg):           ## Sender of msg
+    def client_connection_with_other_client(self,ip,port, msg,typeofmsg):           ## Sender of msg
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("ip, port = ",ip,port)
         s.connect((ip,int(port)))
         user = str(randrange(1000)) + str(self.username)                  #   Implement DHK sender side here!
         private_key = hashlib.sha256(user.encode())                       # 32 Bytes no.
         public_key_client= pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-        public_key_client = '2'+delimiter+str(public_key_client)
-        s.send(public_key_client.encode('utf-8'))                          #Sending my public key
+        
+        if typeofmsg=='m':
+            public_key_client = '2'+delimiter+str(public_key_client)
+            s.send(public_key_client.encode('utf-8'))                          #Sending my public key
+            public_key_recvr = s.recv(1024).decode("utf-8")
+            shared_key = pow(int(public_key_recvr),int(private_key.hexdigest(),16),self.q)
+            encyrpted_msg=self.encrypt_msg(shared_key,msg)
+            s.send(encyrpted_msg)
 
-        public_key_recvr = s.recv(1024).decode("utf-8")
-
-        shared_key = pow(int(public_key_recvr),int(private_key.hexdigest(),16),self.q)
-
-        encyrpted_msg=self.encrypt_msg(shared_key,msg)
-        s.send(encyrpted_msg)
+        elif typeofmsg=='f':
+            public_key_client = '4'+delimiter+str(public_key_client)
+            s.send(public_key_client.encode('utf-8')) 
+            public_key_recvr = s.recv(1024).decode("utf-8")
+            shared_key = pow(int(public_key_recvr),int(private_key.hexdigest(),16),self.q)
+            print("filename: ",msg)
+            s.send(msg.encode('utf-8'))
+            
+            f=open(path_to_store_files+msg,'rb')                 
+            line = f.read()
+            while line:
+                encyrpted_msg=self.encrypt_file(shared_key,line)
+                s.sendall(encyrpted_msg)
+                line = f.read()
+            
+            f.close()
+            
         s.close()
 
     def interact_with_server(self):
-        print("\nAvailable Commands")
-        print("Send <Name||Roll no.> <message>")    # 4 ways
+        print("\nAvailable Commands")                                   
+        print("Send <Name||Roll no.> <message>")                        # 4 ways
+        print("Send_file file_name <Name||Roll no.>")   
         print("Send_group <No. of groups> <Group no.(s)> <message>")    # 4 ways    send_group 2 g1 g2 this is my g2 dsjfkdlsajfkl
         print("Send_group_File <File_Name>  <No. of groups> <Group no.(s)>")
         print("List")
@@ -142,11 +188,32 @@ class User(object):
                     msg=""
                     for i in range(2,len(tokens)):
                         msg=msg+tokens[i]+" "
-                    #msg="GAR"+msg
-                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,msg)) 
+                    typeofmsg='m'
+                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,msg,typeofmsg)) 
                     thread.start()
                 else:
                     print(data.split(delimiter)[1])
+            
+            elif (tokens[0].lower()=="send_file"):      #send_file file_name peername -FORMAT by pdf
+                if len(tokens) <  3:
+                    print("Invalid args to <send>")
+                    continue
+                s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((self.load_bal_Addr,self.load_bal_port))      #send dummy username peername FORMAT BY SERVER
+                padded_msg = "SEND"+delimiter+"DUMMY"+delimiter+self.username+delimiter+tokens[2]
+                s.send(padded_msg.encode('utf-8'))
+                data = s.recv(1024).decode("utf-8")     #  1@IP@PORT of receiver.
+                print("Receiver details received ",data)
+                s.close()
+                if (data.split(delimiter)[0]=='1'):
+                    recv_ip=data.split(delimiter)[1]
+                    recv_port=data.split(delimiter)[2]
+                    typeofmsg='f'
+                    thread = threading.Thread(target = self.client_connection_with_other_client, args= (recv_ip,recv_port,tokens[1],typeofmsg)) 
+                    thread.start()
+                else:
+                    print(data.split(delimiter)[1])
+
 
             ##SEND-GROUP 
             elif (tokens[0].lower()=="send_group"):              #send_group no_of_grps grpname(s) msg 
@@ -203,7 +270,7 @@ class User(object):
                 grp_str = delimiter.join(groups)
 
                 print("grp_str is ", grp_str)
-                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter+ self.username+ delimiter+ grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
+                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter + self.username+ delimiter+ tokens[2] + delimiter + grp_str + delimiter   # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
                 s.sendall(padded_msg.encode('utf-8'))
                 print(padded_msg)                
                 filepath = './'
@@ -230,15 +297,15 @@ class User(object):
                 s.connect((self.load_bal_Addr, self.load_bal_port))
                 padded_msg="LIST"+delimiter+"groups"+delimiter+self.username      #LIST@groups@user1- FORMAT SERVER
                 s.send(padded_msg.encode('utf-8'))         
-                data = s.recv(1024).decode("utf-8")                 # 1@grpname@num_users@grpname@num
-                if (data.split(delimiter)[0]=='1'):
+                data = s.recv(1024).decode("utf-8")                         # 1@grpname@num_users@grpname@num
+                if (data.split(delimiter)[0]=='1'):                                                                          
                     grps_list=data[2:].split(delimiter)
                     for i in range(0,len(grps_list),2):
                         print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
-            
+
             elif (tokens[0].upper()=="JOIN"):                           #JOIN g1-FORMAT PDF
                 if len(tokens) != 2:
                     print("Invalid args to <join>")

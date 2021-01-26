@@ -59,14 +59,15 @@ class loadbalancer():
 
         if(data2.split(delimiter)[0] == 'SEND_GROUP_FILE'):
             print("Inside send_group_file condn ", data)
-            con.sendall(data)
+            con.send(data)
             file_data = socket_client.recv(1024)
             while(file_data):
+                print("sending to server ",file_data)
                 con.sendall(file_data)
                 file_data = socket_client.recv(1024)
             
             val = con.recv(1024)
-            
+            print("val = ",val)
             return val
         
         else:

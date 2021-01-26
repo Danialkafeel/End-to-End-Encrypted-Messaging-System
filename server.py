@@ -352,15 +352,17 @@ def parse_message(connection, data, message):
             return '1'
 
         elif IfExists("SEND_GROUP_FILE", message):
+            print("yo")
             filename = message.split(delimiter)[1]
             
             #Store the file in your local directory
             filepath = path_to_store_files + filename
             with open(filepath, 'wb') as f:
-                file_data = connection.recv(2048)
+                file_data = connection.recv(1024)
+                print("file data recv = ",file_data)
                 while file_data:
                     f.write(file_data)
-                    file_data = connection.recv(2048)
+                    file_data = connection.recv(1024)
             
             #After writing the file, close the connection with the load balancer
             connection.sendall('1')
