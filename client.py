@@ -3,9 +3,10 @@ import sys, hashlib
 from random import randrange
 import base64
 from Crypto.Cipher import DES3
+from os import system, name 
 
 delimiter = "@"
-path_to_store_files = '../Client_path/' 
+path_to_store_files = './' 
 
 class User(object):
     def __init__(self, load_port):
@@ -24,8 +25,11 @@ class User(object):
     def join_group(self,groupname,key):
         self.groupkeys[groupname] = key
     def show_my_groups(self):
+        if not self.groupkeys:
+            print("Not a member of any groups")
+            return
         for groupname in self.groupkeys.keys():
-            print(groupname,":",self.groupkeys[groupname])
+            print(groupname)
 
 
     def encrypt_msg(self,key,msg):                               
@@ -46,65 +50,75 @@ class User(object):
 
 
     def handle_request(self,connection):                     ## DHK recv side
-        data = connection.recv(1024).decode('utf-8')         ##  Assume this to be public key of Sender  2$public_key(peer)
+        data = connection.recv(1024).decode('utf-8')         ##  Assume this to be public key of Sender  2$username$public_key(peer)
         if data.split(delimiter)[0] == '2':
-            data = data.split(delimiter)[1]                     #Public key client
-            user = str(randrange(1000)) + str(self.username)
-            private_key = hashlib.sha256(user.encode())     
-            public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+            try:
+                sender_username = data.split(delimiter)[1]
+                data = data.split(delimiter)[2]                     #Public key client
+                user = str(randrange(1000)) + str(self.username)
+                private_key = hashlib.sha256(user.encode())     
+                public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
 
-            connection.send(str(public_key).encode('utf-8'))        #Sending my public key
-            shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
-           
-            data=connection.recv(1024)
-            decyrpted_msg=self.decrypt_msg(shared_key,data)
-            print("Msg: ",decyrpted_msg.decode('utf-16')[4:])
+                connection.send(str(public_key).encode('utf-8'))        #Sending my public key
+                shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
+               
+                data=connection.recv(1024)
+                decyrpted_msg=self.decrypt_msg(shared_key,data)
+                print(sender_username," : ",decyrpted_msg.decode('utf-16')[4:])
+            except Exception:
+                print("Message not sent, try again")
         
-        elif data.split(delimiter)[0] == '4':
-            data = data.split(delimiter)[1]
-            user = str(randrange(1000)) + str(self.username)
-            private_key = hashlib.sha256(user.encode())     
-            public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+        elif data.split(delimiter)[0] == '5':
+            try:
+                sender_username = data.split(delimiter)[1]
+                data = data.split(delimiter)[2]
+                user = str(randrange(1000)) + str(self.username)
+                private_key = hashlib.sha256(user.encode())     
+                public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
 
-            connection.send(str(public_key).encode('utf-8'))        
-            shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)  
-            
-            filename=connection.recv(1024).decode('utf-8')
-            filename="Received_"+filename
-            print("New file name: ",filename)
-            c=1
-            f=open(filename, 'ab+')
-            bytes_read = connection.recv(40960000)
-            print(len(bytes_read)," ",c)
-            while bytes_read:
-                decyrpted_msg=self.decrypt_msg(shared_key,bytes_read)
-                f.write(decyrpted_msg)
-                c+=1
+                connection.send(str(public_key).encode('utf-8'))        
+                shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)  
+                
+                filename=connection.recv(1024).decode('utf-8')
+                filename="Received_"+filename
+                print("Received from ",sender_username," : ",filename)
+                c=1
+                f=open(filename, 'ab+')
                 bytes_read = connection.recv(40960000)
                 print(len(bytes_read)," ",c)
-            
-            f.close()
-
+                while bytes_read:
+                    decyrpted_msg=self.decrypt_msg(shared_key,bytes_read)
+                    f.write(decyrpted_msg)
+                    c+=1
+                    bytes_read = connection.recv(40960000)
+                    print(len(bytes_read)," ",c)
+                
+                f.close()
+            except Exception:
+                print("Message not sent, try again")
 
         elif data.split(delimiter)[0] == '3':               # received from server (grp)    3$group_name$msg_from_group
             sender_grp_name = data.split(delimiter)[1]
-            print("Msg: ",data.split(delimiter)[2])
+            print(sender_grp_name," : ",data.split(delimiter)[2][3:])
             #data = connection.recv(1024)
         
         #Group files
         elif data.split(delimiter[0] == '4'):   # received file from server (grp)    4$file_name$group_name
-            filename = data.split(delimiter)[1]
-            group = data.split(delimiter)[2]
-            filepath = path_to_store_files + filename
-            bytes_to_read = 1024
-            with open(filepath, 'wb') as f:
-                file_data = f.recv(bytes_to_read)
-                while file_data:
-                    f.write(file_data)
+            try:
+                filename = data.split(delimiter)[1]
+                group = data.split(delimiter)[2]
+                filepath = path_to_store_files + filename
+                bytes_to_read = 1024
+                with open(filepath, 'wb') as f:
                     file_data = f.recv(bytes_to_read)
-            print("File downloaded sent from group",group)
+                    while file_data:
+                        f.write(file_data)
+                        file_data = f.recv(bytes_to_read)
+                print("File downloaded sent from group",group)
+            except Exception:
+                print("Message not sent, try again")
 
-        print("Connection is closed")
+
         connection.close()
         return
 
@@ -122,15 +136,19 @@ class User(object):
             thread.start()
 
     def client_connection_with_other_client(self,ip,port, msg,typeofmsg):           ## Sender of msg
-        s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print("ip, port = ",ip,port)
-        s.connect((ip,int(port)))
+        try:
+            s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # print("ip, port = ",ip,port)
+            s.connect((ip,int(port)))
+        except Exception:
+            print("Client is not Available")
+            return
         user = str(randrange(1000)) + str(self.username)                  #   Implement DHK sender side here!
         private_key = hashlib.sha256(user.encode())                       # 32 Bytes no.
         public_key_client= pow(self.alpha, int(private_key.hexdigest(),16), self.q)
         
         if typeofmsg=='m':
-            public_key_client = '2'+delimiter+str(public_key_client)
+            public_key_client = '2'+delimiter+ self.username + delimiter+ str(public_key_client)
             s.send(public_key_client.encode('utf-8'))                          #Sending my public key
             public_key_recvr = s.recv(1024).decode("utf-8")
             shared_key = pow(int(public_key_recvr),int(private_key.hexdigest(),16),self.q)
@@ -138,14 +156,14 @@ class User(object):
             s.send(encyrpted_msg)
 
         elif typeofmsg=='f':
-            public_key_client = '4'+delimiter+str(public_key_client)
+            public_key_client = '5'+delimiter+ self.username + delimiter + str(public_key_client)
             s.send(public_key_client.encode('utf-8')) 
             public_key_recvr = s.recv(1024).decode("utf-8")
             shared_key = pow(int(public_key_recvr),int(private_key.hexdigest(),16),self.q)
             print("filename: ",msg)
             s.send(msg.encode('utf-8'))
             
-            f=open(path_to_store_files+msg,'rb')                 
+            f=open("./"+msg,'rb')                 
             line = f.read()
             while line:
                 encyrpted_msg=self.encrypt_file(shared_key,line)
@@ -157,14 +175,15 @@ class User(object):
         s.close()
 
     def interact_with_server(self):
-        print("\nAvailable Commands")                                   
-        print("Send <Name||Roll no.> <message>")                        # 4 ways
+        print("\n\033[1mAvailable Commands\033[0m")                                   
+        print("\x1B[33mSend <Name||Roll no.> <message>")                        # 4 ways
         print("Send_file file_name <Name||Roll no.>")   
         print("Send_group <No. of groups> <Group no.(s)> <message>")    # 4 ways    send_group 2 g1 g2 this is my g2 dsjfkdlsajfkl
         print("Send_group_File <File_Name>  <No. of groups> <Group no.(s)>")
         print("List")
         print("Create <Group name>")
-        print("Join <Group name>\n")
+        print("Join <Group name>")
+        print("Show_my_groups\n\x1B[0m")
         while True:
             org_msg=input(":")
             # padded_msg=appending_dollar(org_msg)+client_IP+"@"+client_PORT
@@ -180,7 +199,7 @@ class User(object):
                 padded_msg = "SEND"+delimiter+"dummy"+delimiter+self.username+delimiter+tokens[1]       
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")     #  1@IP@PORT of receiver.
-                print("receiver details received",data)
+                # print("receiver details received",data)
                 s.close()
                 if (data.split(delimiter)[0]=='1'):
                     recv_ip=data.split(delimiter)[1]
@@ -203,7 +222,7 @@ class User(object):
                 padded_msg = "SEND"+delimiter+"DUMMY"+delimiter+self.username+delimiter+tokens[2]
                 s.send(padded_msg.encode('utf-8'))
                 data = s.recv(1024).decode("utf-8")     #  1@IP@PORT of receiver.
-                print("Receiver details received ",data)
+                # print("Receiver details received ",data)
                 s.close()
                 if (data.split(delimiter)[0]=='1'):
                     recv_ip=data.split(delimiter)[1]
@@ -224,13 +243,18 @@ class User(object):
                     no_of_grps = int(tokens[1])
                 except:
                     print("No. of groups must be an integer")
+                    continue
                 groups = []
                 for i in range(no_of_grps):
                     if tokens[i+2] in self.groupkeys.keys():
                         groups.append(tokens[i+2])
                     else:
                         print("You are not a part of ",tokens[i+2],"group")
-                msg = "GAR"+tokens[no_of_grps+2]
+                try:
+                    msg = "GAR"+tokens[no_of_grps+2]
+                except Exception:
+                    print("No message provided")
+                    continue
                 if not groups:
                     print("Message not sent! Not a member of any of the groups")
                     continue
@@ -300,9 +324,12 @@ class User(object):
                 data = s.recv(1024).decode("utf-8")                         # 1@grpname@num_users@grpname@num
                 if (data.split(delimiter)[0]=='1'):                                                                          
                     grps_list=data[2:].split(delimiter)
-                    for i in range(0,len(grps_list),2):
-                        pass
-                        #print(grps_list[i]," : ",grps_list[i+1])                                  
+                    # print(grps_list)
+                    if not grps_list:
+                        print("No groups found!")
+                    else:
+                        for i in range(0,len(grps_list),2):
+                            print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
@@ -345,11 +372,14 @@ class User(object):
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
-            elif (tokens[0].upper() == "SHOW_GROUPS"):
+            elif (tokens[0].upper() == "SHOW_MY_GROUPS"):
                 self.show_my_groups()
             # else:
             #     print("Invalid Command")
 
+
+def clear(): 
+    _ = system('clear')
 
 def main():
     if len(sys.argv) != 3:
@@ -365,6 +395,7 @@ def main():
     initial_thread = threading.Thread(target = thisUser.client_as_server, args=(client_IP, client_PORT))
     initial_thread.start()
 
+    clear()
     print("\nWelcome !!")
     print("New User?   Sign up <Name> <Roll no.> <Password>")
     print("Already have an account?   Login <Name||Roll no.> <Password>\n")
@@ -373,7 +404,8 @@ def main():
         # padded_msg=appending_dollar(org_msg)+client_IP+"@"+client_PORT
         tokens=org_msg.split(' ')
         # print(tokens)
-        if tokens[0] == '':
+        if tokens[0] == '' or len(tokens) < 3:
+            print("Invalid Command")
             continue
         signup_check=tokens[0].lower()+" "+tokens[1].lower()
         if (signup_check=="sign up"):                        #SIGN UP U1 R1 P1  #Indx-0 1 2 3 4 #LEN-5
@@ -388,7 +420,7 @@ def main():
             padded_msg="SIGN"+delimiter+"UP"+delimiter+username+delimiter+tokens[4]+delimiter+client_IP+delimiter+client_PORT
             s.send(padded_msg.encode('utf-8'))                          #SIGN@UP@U1R1@P1@IP@PORT
             data = s.recv(1024).decode("utf-8") 
-            print("data recv = ",data)
+            # print("data recv = ",data)
             if (data.split(delimiter)[0]=='1'):
                 print("Successfully SIGNED UP!")
             else:
@@ -406,15 +438,16 @@ def main():
             # print(""padded_msg)
             s.send(padded_msg.encode('utf-8'))
             data = s.recv(1024).decode("utf-8")
-            print("data = ",data)
+            # print("data = ",data)
             if (data.split(delimiter)[0]=='1'):
+                clear()
                 print("Successfully LOGGED IN!")
                 thisUser.set_username(tokens[1])
                 grps_info = data.split(delimiter)
                 if len(grps_info) > 2:
                     for i in range(1,len(grps_info),2):
                         thisUser.groupkeys[grps_info[i]] = grps_info[i+1]
-                thisUser.show_my_groups()
+                # thisUser.show_my_groups()
                 thisUser.interact_with_server()
                 break
             else:
