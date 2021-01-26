@@ -5,7 +5,7 @@ import base64
 from Crypto.Cipher import DES3
 
 delimiter = "@"
-path_to_store_files = '../Client_path' 
+path_to_store_files = '../Client_path/' 
 
 class User(object):
     def __init__(self, load_port):
@@ -216,7 +216,7 @@ class User(object):
                 s.connect((self.load_bal_Addr,self.load_bal_port))
                 grp_str = delimiter.join(groups)
                 print("grp_str is ", grp_str)
-                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter+ self.username+ delimiter+ grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
+                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter + self.username+ delimiter+ tokens[2] + delimiter + grp_str + delimiter   # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
                 s.sendall(padded_msg.encode('utf-8'))
                 print(padded_msg)
                 
@@ -248,7 +248,8 @@ class User(object):
                 if (data.split(delimiter)[0]=='1'):
                     grps_list=data[2:].split(delimiter)
                     for i in range(0,len(grps_list),2):
-                        print(grps_list[i]," : ",grps_list[i+1])                                  
+                        pass
+                        #print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
