@@ -396,9 +396,9 @@ def main():
     initial_thread.start()
 
     clear()
-    print("\nWelcome !!")
-    print("New User?   Sign up <Name> <Roll no.> <Password>")
-    print("Already have an account?   Login <Name||Roll no.> <Password>\n")
+    print("\n\033[1mWelcome !!\033[0m")
+    print("New User?   \x1B[33mSign up <Name> <Roll no.> <Password>\033[0m")
+    print("Already have an account?   \x1B[33mLogin <Name||Roll no.> <Password>\n\033[0m")
     while True:
         org_msg=input(":")
         # padded_msg=appending_dollar(org_msg)+client_IP+"@"+client_PORT
