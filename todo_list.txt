@@ -4,4 +4,3 @@
 3.	Return if the receiver is logged in or not. // This should be handled from the client side, You put your socket connection
 code in the try catch block, in any case TA has said that we can assume that receiver is always online.	Okay :)
 
-4.	

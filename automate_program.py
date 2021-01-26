@@ -14,7 +14,7 @@ else:
 
 
 for i in range(number_of_servers):
-    status = subprocess.call("gnome-terminal -- python3 " + server_path, shell=True)
+    status = subprocess.call("gnome-terminal -- python3 " + server_path, shell = True)
 
 
 # for i in range(number_of_clients):

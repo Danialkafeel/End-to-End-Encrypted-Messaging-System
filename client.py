@@ -1,12 +1,12 @@
 import threading, socket, os
 import sys, hashlib
 from random import randrange
-import pyDes
 import base64
 from Crypto.Cipher import DES3
 
-delimiter="@"
-file_path='/home/danial/'
+delimiter = "@"
+path_to_store_files = '../Client_path' 
+
 class User(object):
     def __init__(self, load_port):
         self.load_bal_Addr= "127.0.0.1"
@@ -22,68 +22,60 @@ class User(object):
         self.username = usern
 
     def join_group(self,groupname,key):
-        groupkeys[groupname] = key
+        self.groupkeys[groupname] = key
     def show_my_groups(self):
         for groupname in self.groupkeys.keys():
             print(groupname,":",self.groupkeys[groupname])
 
 
-    # def encrypt_msg(key,msg):
-    #     print(final_key)
-    #     new_key= bytearray(str(key), 'utf-16')
-    #     fina_key=new_key[-24:]
-    #     print("OG ",msg)
-    #     cipher = DES3.new(new_size, DES3.MODE_CFB)
-    #     a=cipher.encrypt(msg.encode())
-    #     #print("Encypted", type(a))
-    #     s.send(cipher.encrypt(msg.encode('utf-16')))
-        
+    def encrypt_msg(self,key,msg):                                  
+        final_key= (bytearray(str(key), 'utf-16'))[-24:]
+        msg="GAR"+msg                                           #Adding 3 GARBAGE characters
+        cipher = DES3.new(final_key, DES3.MODE_CFB)
+        return cipher.encrypt(msg.encode('utf-16'))
+    
+    def decrypt_msg(self,key,msg):
+        final_key= (bytearray(str(key), 'utf-16'))[-24:]
+        cipher = DES3.new(final_key, DES3.MODE_CFB)
+        return cipher.decrypt(msg)                           #Remove first 4 characters while decoding it.
 
-    def handle_request(self,connection):        ## DHK recv side
-        data = connection.recv(1024).decode('utf-8')    ##  Assume this to be public key of Sender  2$public_key(peer)
+
+
+    def handle_request(self,connection):                     ## DHK recv side
+        data = connection.recv(1024).decode('utf-8')         ##  Assume this to be public key of Sender  2$public_key(peer)
         if data.split(delimiter)[0] == '2':
-            data = data.split(delimiter)[1]
-            #print("public_key of sender = ",data)
+            data = data.split(delimiter)[1]                 #Public key client
             user = str(randrange(1000)) + str(self.username)
             private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
             public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-            #print("my public_key = ",public_key)
-            connection.send(str(public_key).encode('utf-8'))
+
+            connection.send(str(public_key).encode('utf-8'))        #Sending my public key
             shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q) 
-            #print("shared_key found ",shared_key)
-            array2 = bytearray(str(shared_key), 'utf-16')
-            #print(array2," ",type(array2)," ",len(array2))
-            new_size=array2[-24:]
-            #print(new_size," ",type(new_size)," ",len(new_size))
-            cipher = DES3.new(new_size, DES3.MODE_CFB)
+           
             data=connection.recv(1024)
-            #print("Encypted data: ",data)
-            decyrpted_msg=cipher.decrypt(data)
+            decyrpted_msg=self.decrypt_msg(shared_key,data)
             print("Msg: ",decyrpted_msg.decode('utf-16')[4:])
 
         elif data.split(delimiter)[0] == '3':       # received from server (grp)    3$group_name$msg_from_group
             sender_grp_name = data.split(delimiter)[1]
             #cipher = DES3.new(self.groupkeys[sender_grp_name], DES3.MODE_CFB)
             #decyrpted_msg = cipher.decrypt(data.split(delimiter)[2])
-            print("MSG: ",data.split(delimiter)[2])
+            print("Msg: ",data.split(delimiter)[2])
             #data = connection.recv(1024)
+        
+        #Group files
+        elif data.split(delimiter[0] == '4'):   # received file from server (grp)    4$file_name$group_name
+            filename = data.split(delimiter)[1]
+            group = data.split(delimiter)[2]
+            filepath = path_to_store_files + filename
+            bytes_to_read = 1024
+            with open(filepath, 'wb') as f:
+                file_data = f.recv(bytes_to_read)
+                while file_data:
+                    f.write(file_data)
+                    file_data = f.recv(bytes_to_read)
+            print("File downloaded sent from group",group)
 
-        elif data.split(delimiter)[0] == '4':       # received file from server (grp)    4$file_name$group_name
-
-        # message = message.split(' ')[1]
-        # filepath = '.' + '/' + message
-        # if(os.path.isfile(filepath)):
-        #     message = "Sending file"
-        #     connection.sendall(message.encode("utf-8"))
-
-        #     file_ptr = open(filepath, "rb")
-        #     bytes_read = file_ptr.read(1024)
-        #     while(bytes_read):
-        #         connection.send(bytes_read)
-        #         bytes_read = file_ptr.read(1024)
-        # else:
-        #     message = "File not Present"
-        #     connection.sendall(message.encode("utf-8"))
         print("Connection is closed")
         connection.close()
         return
@@ -101,29 +93,22 @@ class User(object):
             thread_list.append(thread)
             thread.start()
 
-    def client_connection_with_other_client(self,ip,port, msg):     ## Sender of msg
+    def client_connection_with_other_client(self,ip,port, msg):           ## Sender of msg
         s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("ip, port = ",ip,port)
         s.connect((ip,int(port)))
         user = str(randrange(1000)) + str(self.username)                  #   Implement DHK sender side here!
-        private_key = hashlib.sha256(user.encode())     # 32 Bytes no.
-        public_key = pow(self.alpha, int(private_key.hexdigest(),16), self.q)
-        public_key = '2'+delimiter+str(public_key)
-        #print("my public_key = ",public_key)
-        s.send(public_key.encode('utf-8'))
-        data = s.recv(1024).decode("utf-8")
-        #print("public_key received = ",data)
+        private_key = hashlib.sha256(user.encode())                       # 32 Bytes no.
+        public_key_client= pow(self.alpha, int(private_key.hexdigest(),16), self.q)
+        public_key_client = '2'+delimiter+str(public_key_client)
+        s.send(public_key_client.encode('utf-8'))                          #Sending my public key
 
-        shared_key = pow(int(data),int(private_key.hexdigest(),16),self.q)
-       
-        array2 = bytearray(str(shared_key), 'utf-16')
-        new_size=array2[-24:]
+        public_key_recvr = s.recv(1024).decode("utf-8")
 
-        print("OG ",msg)
-        cipher = DES3.new(new_size, DES3.MODE_CFB)
-        a=cipher.encrypt(msg.encode())
-        #print("Encypted", type(a))
-        s.send(cipher.encrypt(msg.encode('utf-16')))
+        shared_key = pow(int(public_key_recvr),int(private_key.hexdigest(),16),self.q)
+
+        encyrpted_msg=self.encrypt_msg(shared_key,msg)
+        s.send(encyrpted_msg)
         s.close()
 
     def interact_with_server(self):
@@ -216,10 +201,13 @@ class User(object):
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
                 grp_str = delimiter.join(groups)
-                padded_msg = "send_group_file"+delimiter+tokens[1]+delimiter+self.username+delimiter+grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
-                s.send(padded_msg.encode('utf-8'))
-                
-                with open(file_path+tokens[1],'rb') as f:
+
+                print("grp_str is ", grp_str)
+                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter+ self.username+ delimiter+ grp_str    # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
+                s.sendall(padded_msg.encode('utf-8'))
+                print(padded_msg)                
+                filepath = './'
+                with open(filepath + tokens[1],'rb') as f:
                     bytes_to_read = 1024
                     file_data=f.read(bytes_to_read)
                     while file_data:
