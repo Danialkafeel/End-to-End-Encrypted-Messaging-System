@@ -424,7 +424,7 @@ def main():
             if (data.split(delimiter)[0]=='1'):
                 print("Successfully SIGNED UP!")
             else:
-                print("Sign up Failed! Try Again")
+                print(data.split(delimiter)[1])
             s.close()
         
         elif (tokens[0].lower()=="login"):                              #login username passwd

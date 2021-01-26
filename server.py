@@ -438,7 +438,7 @@ class Server():
         self.port = port
         self.s = socket.socket()
         self.s.bind(('', self.port))
-        file1 = open('../ip.txt', 'a') 
+        file1 = open('ip.txt', 'a') 
         m = str(self.s.getsockname()[1])+"\n"
         print(self.s.getsockname()[1])
         self.port = self.s.getsockname()[1]
@@ -472,9 +472,9 @@ class Server():
             
     
     def __del__(self):
-        with open("../ip.txt", "r") as f:
+        with open("ip.txt", "r") as f:
             lines = f.readlines()
-        with open("../ip.txt", "w") as f:
+        with open("ip.txt", "w") as f:
             for line in lines:
                 if line.strip("\n") != str(self.port):
                     f.write(line)
