@@ -4,9 +4,10 @@ from random import randrange
 import base64
 from Crypto.Cipher import DES3
 from os import system, name 
+from time import sleep
 
 delimiter = "@"
-path_to_store_files = './' 
+path_to_store_files = '../'
 
 class User(object):
     def __init__(self, load_port):
@@ -294,9 +295,13 @@ class User(object):
                 grp_str = delimiter.join(groups)
 
                 print("grp_str is ", grp_str)
-                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter + self.username+ delimiter+ tokens[2] + delimiter + grp_str + delimiter   # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
+                padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter + self.username + delimiter + grp_str  # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
                 s.sendall(padded_msg.encode('utf-8'))
                 print(padded_msg)                
+                
+                #Make the client wait for some time befor sending file
+                sleep(.5)
+
                 filepath = './'
                 with open(filepath + tokens[1],'rb') as f:
                     bytes_to_read = 1024
@@ -305,12 +310,12 @@ class User(object):
                         s.sendall(file_data)
                         file_data=f.read(bytes_to_read)
 
-
-                data = s.recv(1024).decode("utf-8")
-                if (data.split(delimiter)[0]=='1'):
-                    print("File Received!")
-                else:
-                    print(data.split(delimiter)[1])
+                print("File has been sent")
+                # data = s.recv(1024).decode("utf-8")
+                # if (data.split(delimiter)[0]=='1'):
+                #     print("File Received!")
+                # else:
+                #     print(data.split(delimiter)[1])
                 s.close()
 
             elif (tokens[0].upper()=="LIST"):                            #LIST  FORMAT PDF

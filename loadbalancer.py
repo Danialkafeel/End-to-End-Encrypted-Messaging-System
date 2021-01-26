@@ -1,4 +1,5 @@
 import socket
+from time import sleep
 import threading, sys
 from _thread import *
 
@@ -43,37 +44,31 @@ class loadbalancer():
         print("pno = ", pno)
         val = self.make_connection_with_server(data, int(pno), c)
         
-        c.send(val)
-        
-        # connection closed 
-        c.close() 
+        try:
+            c.send(val)
+            # connection closed 
+            c.close()
+        except Exception as e:
+            print(e)
+
+        return
+    
     def make_connection_with_server(self, data, portno, socket_client):
         con = socket.socket()  
         # connect to the server on local computer 
         con.connect(('127.0.0.1', portno))  
 
         if(data.split(delimiter.encode())[0] == b'SEND_GROUP_FILE'):
-            print("Inside send_group_file condn ", data)
-            number_of_groups = int(data.split(delimiter.encode())[3].decode())
-            
-            command_first_part = byte_delimiter.join(data.split(delimiter.encode())[:2])
-            command_second_part =  byte_delimiter.join(data.split(delimiter.encode())[4: 4+number_of_groups])
-            command = command_first_part + delimiter.encode() + command_second_part
-            
-            rest_of_data = b''
-            for index in range(4+number_of_groups, len(data.split(delimiter.encode()))):
-                rest_of_data += data.split(delimiter.encode())[index]
-            
-            con.sendall(command)
-            con.sendall(rest_of_data)
+            con.sendall(data)
             file_data = socket_client.recv(1024)
             while(file_data):
-                print("sending to server ",file_data)
                 con.sendall(file_data)
                 file_data = socket_client.recv(1024)
             
-            val = con.recv(1024)
-            print("val = ",val)
+            #Close the connection with server
+            con.close()
+            
+            val = b'1'
             return val
         
         else:
@@ -87,7 +82,7 @@ class loadbalancer():
         return val
 
     def get_and_update_port_number(self):
-        f = open('ip.txt', 'r')
+        f = open('../ip.txt', 'r')
         lines = f.readlines()
         self.noofservers = len(lines)
         

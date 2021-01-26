@@ -2,10 +2,11 @@ import os, sqlite3, json
 import re, random
 import threading, socket
 from threading import Lock
+from time import sleep
 
 database_path = "./MyDatabase.db"
 json_file_path = "./queries.json"
-path_to_store_files = "../"
+path_to_store_files = "./Debug/"
 delimiter = '@'
 MAX_NUM_THREADS = 3
 I_AM_BUSY = False
@@ -114,7 +115,9 @@ def send_group_file(data, group, filename, filepath, members, index, max_number_
         
         #Connect with client and send him the message
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.sendall(message)
+        s.sendall(message.encode('utf-8'))
+        sleep(.4)
+        
         with open(filepath, 'rb') as fp:
             try:
                 s.connect( (ip ,int(port)) )
@@ -352,14 +355,12 @@ def parse_message(connection, data, message):
             return '1'
 
         elif IfExists("SEND_GROUP_FILE", message):
-            print("yo")
             filename = message.split(delimiter)[1]
             
             #Store the file in your local directory
             filepath = path_to_store_files + filename
             with open(filepath, 'wb') as f:
                 file_data = connection.recv(1024)
-                print("file data recv = ",file_data)
                 while file_data:
                     f.write(file_data)
                     file_data = connection.recv(1024)
@@ -370,7 +371,7 @@ def parse_message(connection, data, message):
             
             #Make new connection with clients now
             #Iterate through each group one by one and send files to the members
-            for group_index in range(4, len(message.split(delimiter))):
+            for group_index in range(3, len(message.split(delimiter))):
                 group = message.split(delimiter)[group_index]
             
                 #get all the members in the group
