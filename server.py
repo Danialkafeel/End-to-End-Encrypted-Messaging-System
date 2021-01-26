@@ -365,7 +365,7 @@ def parse_message(connection, data, message):
                     file_data = connection.recv(1024)
             
             #After writing the file, close the connection with the load balancer
-            connection.sendall('1')
+            #connection.sendall('1')
             connection.close()
             
             #Make new connection with clients now
@@ -438,7 +438,7 @@ class Server():
         self.port = port
         self.s = socket.socket()
         self.s.bind(('', self.port))
-        file1 = open('ip.txt', 'a') 
+        file1 = open('../ip.txt', 'a') 
         m = str(self.s.getsockname()[1])+"\n"
         print(self.s.getsockname()[1])
         self.port = self.s.getsockname()[1]
@@ -454,7 +454,8 @@ class Server():
             # Establish connection with loadbalancer.  
             connection, addr = self.s.accept()      
             print ('Got connection from', addr ) 
-            message = connection.recv(1024).decode('utf-8')
+            message = connection.recv(1024)
+            message = message.decode('utf-8')
             print("Request is ", message)
             response_message = parse_message(connection, data, message)
             # print("respnse message")
@@ -471,9 +472,9 @@ class Server():
             
     
     def __del__(self):
-        with open("ip.txt", "r") as f:
+        with open("../ip.txt", "r") as f:
             lines = f.readlines()
-        with open("ip.txt", "w") as f:
+        with open("../ip.txt", "w") as f:
             for line in lines:
                 if line.strip("\n") != str(self.port):
                     f.write(line)

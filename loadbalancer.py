@@ -3,6 +3,7 @@ import threading, sys
 from _thread import *
 
 delimiter = '@'
+byte_delimiter = delimiter.encode()
 
 print_lock = threading.Lock()
 
@@ -39,7 +40,7 @@ class loadbalancer():
 
         pno = self.get_and_update_port_number()
         pno = pno.strip('\n')
-        print("pno = ",pno)
+        print("pno = ", pno)
         val = self.make_connection_with_server(data, int(pno), c)
         
         c.send(val)
@@ -50,16 +51,21 @@ class loadbalancer():
         con = socket.socket()  
         # connect to the server on local computer 
         con.connect(('127.0.0.1', portno))  
-        
-        data2 = ''
-        try:
-            data2 = data.decode('utf-8')
-        except Exception as e:
-            print(e)
 
-        if(data2.split(delimiter)[0] == 'SEND_GROUP_FILE'):
+        if(data.split(delimiter.encode())[0] == b'SEND_GROUP_FILE'):
             print("Inside send_group_file condn ", data)
-            con.send(data)
+            number_of_groups = int(data.split(delimiter.encode())[3].decode())
+            
+            command_first_part = byte_delimiter.join(data.split(delimiter.encode())[:2])
+            command_second_part =  byte_delimiter.join(data.split(delimiter.encode())[4: 4+number_of_groups])
+            command = command_first_part + delimiter.encode() + command_second_part
+            
+            rest_of_data = b''
+            for index in range(4+number_of_groups, len(data.split(delimiter.encode()))):
+                rest_of_data += data.split(delimiter.encode())[index]
+            
+            con.sendall(command)
+            con.sendall(rest_of_data)
             file_data = socket_client.recv(1024)
             while(file_data):
                 print("sending to server ",file_data)
@@ -81,7 +87,7 @@ class loadbalancer():
         return val
 
     def get_and_update_port_number(self):
-        f = open('ip.txt', 'r')
+        f = open('../ip.txt', 'r')
         lines = f.readlines()
         self.noofservers = len(lines)
         

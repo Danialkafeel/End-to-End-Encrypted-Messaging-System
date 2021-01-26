@@ -301,7 +301,8 @@ class User(object):
                 if (data.split(delimiter)[0]=='1'):                                                                          
                     grps_list=data[2:].split(delimiter)
                     for i in range(0,len(grps_list),2):
-                        print(grps_list[i]," : ",grps_list[i+1])                                  
+                        pass
+                        #print(grps_list[i]," : ",grps_list[i+1])                                  
                 else:
                     print(data.split(delimiter)[1])
                 s.close()
