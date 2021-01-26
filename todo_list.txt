@@ -1,17 +1,6 @@
 
-4.  after login, port is not being updated in the DB. // done
-
-1.	Client not allowed to join/create the same grp again	// Completed.
-
 2.	Always take SHA256 of the group key received.
 
 3.	Return if the receiver is logged in or not. // This should be handled from the client side, You put your socket connection
 code in the try catch block, in any case TA has said that we can assume that receiver is always online.	Okay :)
 
-6.	password fixing. // done
-
-7. In send messages/files to the group functionality, check whether the user is part of that group and 
-and send only those group names
-
-Differentiate between different types of messages
-Test sending group messages and files

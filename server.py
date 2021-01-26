@@ -350,9 +350,8 @@ def parse_message(connection, data, message):
                 mutex.release()
             
             return '1'
-        
+
         elif IfExists("SEND_GROUP_FILE", message):
-            #prin
             filename = message.split(delimiter)[1]
             
             #Store the file in your local directory

@@ -64,7 +64,7 @@ class User(object):
             #data = connection.recv(1024)
         
         #Group files
-        elif data.split(delimiter[0] == '4'):
+        elif data.split(delimiter[0] == '4'):   # received file from server (grp)    4$file_name$group_name
             filename = data.split(delimiter)[1]
             group = data.split(delimiter)[2]
             filepath = path_to_store_files + filename
@@ -74,22 +74,8 @@ class User(object):
                 while file_data:
                     f.write(file_data)
                     file_data = f.recv(bytes_to_read)
+            print("File downloaded sent from group",group)
 
-
-        # message = message.split(' ')[1]
-        # filepath = '.' + '/' + message
-        # if(os.path.isfile(filepath)):
-        #     message = "Sending file"
-        #     connection.sendall(message.encode("utf-8"))
-
-        #     file_ptr = open(filepath, "rb")
-        #     bytes_read = file_ptr.read(1024)
-        #     while(bytes_read):
-        #         connection.send(bytes_read)
-        #         bytes_read = file_ptr.read(1024)
-        # else:
-        #     message = "File not Present"
-        #     connection.sendall(message.encode("utf-8"))
         print("Connection is closed")
         connection.close()
         return
@@ -129,7 +115,7 @@ class User(object):
         print("\nAvailable Commands")
         print("Send <Name||Roll no.> <message>")    # 4 ways
         print("Send_group <No. of groups> <Group no.(s)> <message>")    # 4 ways    send_group 2 g1 g2 this is my g2 dsjfkdlsajfkl
-        print("Send_group_File <File_Name>  <No. of groups> <Group no.(s)> <message>")
+        print("Send_group_File <File_Name>  <No. of groups> <Group no.(s)>")
         print("List")
         print("Create <Group name>")
         print("Join <Group name>\n")
@@ -215,11 +201,11 @@ class User(object):
                 s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((self.load_bal_Addr,self.load_bal_port))
                 grp_str = delimiter.join(groups)
+
                 print("grp_str is ", grp_str)
                 padded_msg = "SEND_GROUP_FILE"+ delimiter+ tokens[1] + delimiter + self.username+ delimiter+ tokens[2] + delimiter + grp_str + delimiter   # send_group@DUMMY@USERNAME@MESSAGE@G1@G2...        
                 s.sendall(padded_msg.encode('utf-8'))
-                print(padded_msg)
-                
+                print(padded_msg)                
                 filepath = './'
                 with open(filepath + tokens[1],'rb') as f:
                     bytes_to_read = 1024
