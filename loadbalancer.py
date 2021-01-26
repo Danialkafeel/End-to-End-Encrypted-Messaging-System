@@ -87,7 +87,7 @@ class loadbalancer():
         return val
 
     def get_and_update_port_number(self):
-        f = open('../ip.txt', 'r')
+        f = open('ip.txt', 'r')
         lines = f.readlines()
         self.noofservers = len(lines)
         
