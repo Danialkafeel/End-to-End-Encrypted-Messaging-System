@@ -20,14 +20,19 @@
 * *List*             - Listing avaliable groups to join.
 
 ## Snapshots of the Application with various Commands
+
 * Automate program to create multiple servers
+
 ![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/1_automate_program_for_servers.png)
 
 * Sign Up
+
 ![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/2_signup_menu.png)
 
 * Login Menu , List , Create, Join Commands
+
 ![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/3_login_menu_and_commands.png)
 
 * Messages between Client to Client and Client to Groups.
+
 ![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/4_msg_p2p_and_p2group.png)
