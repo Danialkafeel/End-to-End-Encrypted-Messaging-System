@@ -20,42 +20,14 @@
 * *List*             - Listing avaliable groups to join.
 
 ## Snapshots of the Application with various Commands
-    * Sign Up
-            ![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/2_signup_menu.png)
+* Automate program to create multiple servers
+![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/1_automate_program_for_servers.png)
 
-    -> *Login <usernamer+rollnumber> <password>* 
+* Sign Up
+![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/2_signup_menu.png)
 
-            [[Screesnhot]]
+* Login 
 
-    -> *Create <Groupname> 
+* Create <Groupname> 
 
-            [[Screesnhot]]
-
-    -> *Join <Groupname>   
-
-            [[Screesnhot]]
-
-    -> *Show_my_groups*   
-
-            [[Screesnhot]]
-
-    -> *List*             
-
-            [[Screesnhot]]
-
-    -> *Send <Name+Rollno.> <message>*          
-
-            [[Screesnhot]]
-
-
-    -> *Send_file file_name <Name||Rollno.>*   
-
-            [[Screesnhot]]
-
-    -> *Send_group <No.ofgroups> <Groupno.(s)> <message>* 
-
-            [[Screesnhot]]
-
-    -> *Send_group_File <File_Name>  <No.ofgroups> <Groupno.(s)>* 
-
-            [[Screesnhot]]
+* Join <Groupname>
