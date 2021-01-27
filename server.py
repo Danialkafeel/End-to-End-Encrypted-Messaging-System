@@ -111,16 +111,19 @@ def send_group_file(data, group, filename, filepath, members, index, max_number_
         #get port of peer
         query_to_execute = data['queries']['get_column_conditional_query'].format("port", "User", "Username = {}".format(add_quotes(peer)))
         port = execute_query(query_to_execute)
-        port = ip[0][0]
+        port = port[0][0]
         
         #Connect with client and send him the message
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("message = ",message)
+        print("ip, port ",ip,port)
+        s.connect( (ip ,int(port)) )
+
         s.sendall(message.encode('utf-8'))
         sleep(.4)
         
         with open(filepath, 'rb') as fp:
             try:
-                s.connect( (ip ,int(port)) )
                 #offset = 0
                 bytes_to_read = 1024
                 file_data = fp.read(bytes_to_read)

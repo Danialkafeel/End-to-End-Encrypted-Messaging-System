@@ -7,7 +7,7 @@ from os import system, name
 from time import sleep
 
 delimiter = "@"
-path_to_store_files = '../'
+path_to_store_files = './'
 
 class User(object):
     def __init__(self, load_port):
@@ -104,20 +104,21 @@ class User(object):
             #data = connection.recv(1024)
         
         #Group files
-        elif data.split(delimiter[0] == '4'):   # received file from server (grp)    4$file_name$group_name
+        elif data.split(delimiter)[0] == '4':   # received file from server (grp)    4$file_name$group_name
+            # print("data4 ",data)
             try:
                 filename = data.split(delimiter)[1]
                 group = data.split(delimiter)[2]
-                filepath = path_to_store_files + filename
-                bytes_to_read = 1024
+                filepath = path_to_store_files + "Received_" + filename
+                bytes_to_read = 4096
                 with open(filepath, 'wb') as f:
-                    file_data = f.recv(bytes_to_read)
+                    file_data = connection.recv(bytes_to_read)
                     while file_data:
                         f.write(file_data)
-                        file_data = f.recv(bytes_to_read)
+                        file_data = connection.recv(bytes_to_read)
                 print("File downloaded sent from group",group)
-            except Exception:
-                print("Message not sent, try again")
+            except Exception as e:
+                print(e)
 
 
         connection.close()
