@@ -1,4 +1,4 @@
-                        *END TO END MESSAGING SYSTEM*
+ **END TO END MESSAGING SYSTEM**   
 
 **FLOW AND WORKING**
     ->A automated program is executed to start desired number of *Servers* for the application.
@@ -46,14 +46,17 @@
 
     -> *Send <Name+Rollno.> <message>*          
 
+            [[Screesnhot]]
 
 
     -> *Send_file file_name <Name||Rollno.>*   
 
-
+            [[Screesnhot]]
 
     -> *Send_group <No.ofgroups> <Groupno.(s)> <message>* 
 
-
+            [[Screesnhot]]
 
     -> *Send_group_File <File_Name>  <No.ofgroups> <Groupno.(s)>* 
+
+            [[Screesnhot]]
