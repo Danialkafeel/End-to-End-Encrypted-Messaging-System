@@ -1,4 +1,4 @@
-                        **END TO END MESSAGING SYSTEM**   
+                        *END TO END MESSAGING SYSTEM*
 
 **FLOW AND WORKING**
     ->A automated program is executed to start desired number of *Servers* for the application.
