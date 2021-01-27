@@ -26,8 +26,8 @@
 * Sign Up
 ![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/2_signup_menu.png)
 
-* Login 
+* Login Menu , List , Create, Join Commands
+![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/3_login_menu_and_commands.png)
 
-* Create <Groupname> 
-
-* Join <Groupname>
+* Messages between Client to Client and Client to Groups.
+![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/4_msg_p2p_and_p2group.png)
