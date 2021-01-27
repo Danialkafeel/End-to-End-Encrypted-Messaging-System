@@ -253,7 +253,9 @@ class User(object):
                     else:
                         print("You are not a part of ",tokens[i+2],"group")
                 try:
-                    msg = "GAR"+tokens[no_of_grps+2]
+                    msg = "GAR"
+                    for i in range(no_of_grps + 2,len(tokens)):
+                        msg=msg+tokens[i]+" "
                 except Exception:
                     print("No message provided")
                     continue
