@@ -20,8 +20,8 @@
 * *List*             - Listing avaliable groups to join.
 
 ## Snapshots of the Application with various Commands
-    ->*Sign Up*
-            [[Screesnhot]]
+    * Sign Up
+            ![alt text](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/2_signup_menu.png)
 
     -> *Login <usernamer+rollnumber> <password>* 
 
