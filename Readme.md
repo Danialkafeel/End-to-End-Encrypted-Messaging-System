@@ -19,6 +19,10 @@
 * *Show_my_groups*    - Displaying groups where I am a member
 * *List*             - Listing avaliable groups to join.
 
+## Class Diagram
+
+![class diagram](https://github.com/Danialkafeel/End-to-end-messaging-system/blob/main/Images/Class%20Diagram.jpg)
+
 ## Snapshots of the Application with various Commands
 
 * Automate program to create multiple servers
