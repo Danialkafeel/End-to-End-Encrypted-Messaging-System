@@ -96,6 +96,9 @@ class loadbalancer():
         return returnval
 
 def main():
+    if(len(sys.argv) != 2):
+        print("Type in format loadbalancer.py <PORT>")
+        return
     l = loadbalancer(sys.argv[1])
 
 if __name__ == '__main__':
