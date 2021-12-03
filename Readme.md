@@ -37,7 +37,7 @@
 * `List`             - Listing avaliable groups to join.
 
 ##  Interaction Model
-![Interaction model](https://github.com/Janmejay50010/Experimentation/blob/master/Images/snsdiagram.png)
+![Interaction model](https://github.com/Danialkafeel/End-to-End-Encrypted-Messaging-System/blob/main/Images/snsdiagram.png)
 
 ## Class Diagram
 
